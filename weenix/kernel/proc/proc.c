@@ -1,3 +1,16 @@
+/*
+Here are the functions you will need to write in proc/proc.c. You will find documentation on each of them in the source and header 
+files in your Weenix project directory.
+
+proc_t *proc_create(char *name);
+void proc_cleanup(int status);
+void proc_kill(proc_t *p, int status);
+void proc_kill_all();
+void proc_thread_exited(void *retval);
+pid_t do_waitpid(pid_tpid,intoptions,int*status); void do_exit(int status);
+
+Your life will be slightly easier if you choose to use the list macros we have provided to construct, edit, and traverse linked lists.
+*/
 #include "kernel.h"
 #include "config.h"
 #include "globals.h"

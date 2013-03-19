@@ -1,3 +1,11 @@
+/*
+Since the kernel is multi-threaded, we need some way to ensure that certain critical paths are not executed simultaneously by multiple threads. Once mechanism you will need is the mutex. Feel free to implement semaphores, condition variables, or read-write locks as well if you so desire, though they are in no way necessary to have a functioning kernel.
+Functions you will need to write in proc/kmutex.c:
+void kmutex_init(kmutex_t *mtx);
+void kmutex_lock(kmutex_t *mtx);
+void kmutex_lock_cancellable(kmutex_t *mtx); void kmutex_unlock(kmutex_t *mtx);
+*/
+
 #include "globals.h"
 #include "errno.h"
 

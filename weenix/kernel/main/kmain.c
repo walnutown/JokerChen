@@ -1,3 +1,14 @@
+/*
+ The goal of bootstrap()is to set up the first kernel thread and process which should start executing the idleproc_run()function. 
+ This should be a piece of cake once you've implemented threads and the scheduler. 
+
+ idleproc_run()performs further initialization 
+ and starts the init process using initproc_create(), which starts executing in initproc_run(). All of your test code should be 
+ in initproc_run(). When your operating system is nearly complete, it will execute a binary program in user mode, but for now, 
+ be content to put together your own testing system for threads and processes. Once you have implemented terminal drivers, you 
+ can test here by setting up the kernel shell from test/kshell/.
+*/
+
 #include "types.h"
 #include "globals.h"
 #include "kernel.h"
@@ -41,6 +52,7 @@
 #include "fs/stat.h"
 
 #include "test/kshell/kshell.h"
+#define TEST_NUMS 5
 
 GDB_DEFINE_HOOK(boot)
 GDB_DEFINE_HOOK(initialized)
@@ -52,10 +64,11 @@ static kthread_t *initproc_create(void);
 static void      *initproc_run(int arg1, void *arg2);
 static void       hard_shutdown(void);
 
+
 static context_t bootstrap_context;
 
 /**
- * This is the first real C function ever called. It performs a lot of
+ * This is the first real C function ever called. It performs a lot off
  * hardware-specific initialization, then creates a pseudo-context to
  * execute the bootstrap function in.
  */
@@ -124,7 +137,19 @@ bootstrap(int arg1, void *arg2)
         /* necessary to finalize page table information */
         pt_template_init();
 
+        /* ---------------------heguang-------------------- */
+        proc_t *idle_process=proc_create("idle_proc");
+        KASSERT(PID_IDLE==idle_process->p_pid);
+        kthread_t *idle_thread=kthread_create(idle_process,idleproc_run,0,NULL);//内含kthread context setup 
+        curproc=idle_process;
+        curthr=idle_thread;
+
+        curproc->p_state=PROC_RUNNING;
+        curthr->kt_state=KT_RUN;
+        context_make_active(&curthr->kt_ctx);
+
         NOT_YET_IMPLEMENTED("PROCS: bootstrap");
+         /* ---------------------heguang-------------------- */
 
         panic("weenix returned to bootstrap()!!! BAD!!!\n");
         return NULL;
@@ -213,8 +238,14 @@ idleproc_run(int arg1, void *arg2)
 static kthread_t *
 initproc_create(void)
 {
+    /* ---------------------heguang-------------------- */
+    proc_t *init_process=proc_create("init_process");
+    KASSERT(PID_INIT==init_process->p_pid);
+    kthread_t *init_thread=kthread_create(init_process,initproc_run,0,NULL);
+
         NOT_YET_IMPLEMENTED("PROCS: initproc_create");
-        return NULL;
+    return init_thread;
+    /* ---------------------heguang-------------------- */
 }
 
 /**
@@ -231,9 +262,39 @@ initproc_create(void)
 static void *
 initproc_run(int arg1, void *arg2)
 {
-        NOT_YET_IMPLEMENTED("PROCS: initproc_run");
+    /* ---------------------heguang-------------------- */
 
+    int status[TEST_NUMS];
+    pid_t child[TEST_NUMS];
+    proc_t *process[TEST_NUMS];
+    kthread_t *thr[TEST_NUMS];
+
+    for(i=0;i<TEST_NUMS;i++)
+    {
+        process[i]=proc_create("test_process");
+        thread[i]=kthread_create(process[i],test,0,NULL);
+        sched_make_runnable(thread[i]);
+    }
+
+    while(!list_empty(&curproc->p_children))
+    {
+        child=do_waitpid(-1,0,&status[i]);
+        KASSERT(status[i]==0);
+        dbg_print("process %d return.\n",child);
+    }
+
+    /* ---------------------heguang-------------------- */
+        NOT_YET_IMPLEMENTED("PROCS: initproc_run");
         return NULL;
+}
+static void *
+test(int arg1, void *arg2)
+{
+    /* ---------------------heguang-------------------- */
+    dbg_print("test function start.\n");
+    //add test code here.
+    dbg_print("test function return.\n");
+    return NULL;
 }
 
 /**

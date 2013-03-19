@@ -1,3 +1,18 @@
+/*
+Once you have created processes and threads, you will need a way to run these threads and switch between them. 
+If you choose to write a yield function it is advisable to name it sched_yld()or something similar, as the name
+ sched_yield()is taken by a Linux system call.
+
+Functions you will need to write in proc/sched.c:
+void sched_sleep_on(ktqueue_t *q);
+int sched_cancellable_sleep_on(ktqueue_t *q); 
+kthread_t *sched_wakeup_on(ktqueue_t *q);
+void sched_broadcast_on(ktqueue_t *q);
+void sched_cancel(kthread_t *kthr);
+void sched_switch(void);
+void sched_make_runnable(kthread_t *thr);
+The most difficult of these functions to get correct is sched_switch, although with a little care it should not be too bad.
+*/
 #include "globals.h"
 #include "errno.h"
 

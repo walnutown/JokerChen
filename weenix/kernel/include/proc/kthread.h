@@ -24,6 +24,7 @@ typedef struct kthread {
         ktqueue_t      *kt_wchan;       /* The queue that this thread is blocked on */
         int             kt_state;       /* this thread's state */
         list_link_t     kt_qlink;       /* link on ktqueue */
+                                        /* qlink is not a list, its the link of this thread in wchan ktqueue */
         list_link_t     kt_plink;       /* link on proc thread list */
 #ifdef __MTP__
         int             kt_detached;    /* if the thread has been detached */

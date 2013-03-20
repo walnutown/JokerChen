@@ -277,12 +277,13 @@ initproc_run(int arg1, void *arg2)
         thread[i]=kthread_create(process[i],test,0,NULL);
         sched_make_runnable(thread[i]);
     }
-
+    i=0;
     while(!list_empty(&curproc->p_children))
     {
-        child=do_waitpid(-1,0,&status[i]);
+        child[i]=do_waitpid(-1,0,&status[i]);
         KASSERT(status[i]==0);
-        dbg_print("process %d return.\n",(int)child);
+        dbg_print("process %d return.\n",(int)child[i]);
+        i++;
     }
 
     /* ---------------------heguang-------------------- */

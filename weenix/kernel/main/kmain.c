@@ -135,22 +135,35 @@ kmain()
 static void *
 bootstrap(int arg1, void *arg2)
 {
+        /*--taohu--------dbg----------------*/
         dbg(DBG_TEST,"Enter bootstrap()\n");
+
         /* necessary to finalize page table information */
         pt_template_init();
 
         /* ---------------------heguang-------------------- */
         proc_t *idle_process=proc_create("idle_proc");
-        KASSERT(PID_IDLE==idle_process->p_pid);
+        /*--taohu--------Gradeline requirement----------------*/
+        KASSERT(NULL != idle_process); /* make sure that the "idle" process has
+been created successfully */
+        KASSERT(PID_IDLE==idle_process->p_pid);/* make sure that what has been
+created is the "idle" process */
+         /*--taohu-------------------------------------------*/
         
         kthread_t *idle_thread=kthread_create(idle_process,idleproc_run,0,NULL);
+        /*--taohu--------Gradeline requirement----------------*/
+        KASSERT(NULL != idle_thread); /* make sure that the thread for the "idle"
+process has been created successfully */
+         /*--taohu-------------------------------------------*/
+
         curproc=idle_process;
         curthr=idle_thread;
 
-        curproc->p_state=PROC_RUNNING;
+        /*curproc->p_state=PROC_RUNNING;*/
         curthr->kt_state=KT_RUN;
         context_make_active(&curthr->kt_ctx);
 
+        /*--taohu--------dbg----------------*/
         dbg(DBG_TEST,"Leave bootstrap()\n");
 
         NOT_YET_IMPLEMENTED("PROCS: bootstrap");
@@ -175,6 +188,9 @@ bootstrap(int arg1, void *arg2)
 static void *
 idleproc_run(int arg1, void *arg2)
 {
+        /*--taohu--------dbg----------------*/
+        dbg(DBG_TEST,"Enter idleproc_run()\n");
+
         int status;
         pid_t child;
 
@@ -227,6 +243,8 @@ idleproc_run(int arg1, void *arg2)
         dbg_print("\nweenix: halted cleanly!\n");
         GDB_CALL_HOOK(shutdown);
         hard_shutdown();
+       /*--taohu--------dbg----------------*/
+        dbg(DBG_TEST,"Enter idleproc_run()\n");
         return NULL;
 }
 
@@ -243,15 +261,26 @@ idleproc_run(int arg1, void *arg2)
 static kthread_t *
 initproc_create(void)
 {
+     /*--taohu--------dbg----------------*/
      dbg(DBG_TEST,"Enter initproc_create()\n");
     /* ---------------------heguang-------------------- */
     proc_t *init_process=proc_create("init_process");
+
+    /*--taohu--------Gradeline requirement----------------*/
+    KASSERT(NULL != init_process);
     KASSERT(PID_INIT==init_process->p_pid);
+    /*--taohu---------------------------------------------*/
+
     kthread_t *init_thread=kthread_create(init_process,initproc_run,0,NULL);
+
+    /*--taohu--------Gradeline requirement----------------*/
+    KASSERT(NULL != init_thread);
+    /*--taohu---------------------------------------------*/
 
         NOT_YET_IMPLEMENTED("PROCS: initproc_create");
     return init_thread;
     /* ---------------------heguang-------------------- */
+     /*--taohu--------dbg----------------*/
      dbg(DBG_TEST,"Leave initproc_create()\n");
 }
 
@@ -269,6 +298,7 @@ initproc_create(void)
 static void *
 initproc_run(int arg1, void *arg2)
 {
+     /*--taohu--------dbg----------------*/
      dbg(DBG_TEST,"Enter initproc_run()\n");
     /* ---------------------heguang-------------------- */
 
@@ -293,6 +323,7 @@ initproc_run(int arg1, void *arg2)
     }
 
     /* ---------------------heguang-------------------- */
+     /*--taohu--------dbg----------------*/
      dbg(DBG_TEST,"Leave initproc_run()\n");
         NOT_YET_IMPLEMENTED("PROCS: initproc_run");
         return NULL;

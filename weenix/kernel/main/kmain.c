@@ -63,6 +63,7 @@ static void      *idleproc_run(int arg1, void *arg2);
 static kthread_t *initproc_create(void);
 static void      *initproc_run(int arg1, void *arg2);
 static void       hard_shutdown(void);
+static void      *test(int arg1, void *arg2);
 
 
 static context_t bootstrap_context;
@@ -268,8 +269,8 @@ initproc_run(int arg1, void *arg2)
     int status[TEST_NUMS];
     pid_t child[TEST_NUMS];
     proc_t *process[TEST_NUMS];
-    kthread_t *thr[TEST_NUMS];
-
+    kthread_t *thread[TEST_NUMS];
+    int i;
     for(i=0;i<TEST_NUMS;i++)
     {
         process[i]=proc_create("test_process");
@@ -281,7 +282,7 @@ initproc_run(int arg1, void *arg2)
     {
         child=do_waitpid(-1,0,&status[i]);
         KASSERT(status[i]==0);
-        dbg_print("process %d return.\n",child);
+        dbg_print("process %d return.\n",(int)child);
     }
 
     /* ---------------------heguang-------------------- */

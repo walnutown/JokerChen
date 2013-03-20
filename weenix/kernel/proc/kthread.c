@@ -74,7 +74,37 @@ free_stack(char *stack)
 kthread_t *
 kthread_create(struct proc *p, kthread_func_t func, long arg1, void *arg2)
 {
-        NOT_YET_IMPLEMENTED("PROCS: kthread_create");
+        /* Yu Sun Code Start */
+        /* Alloc the thread form slab chunk */
+        kthread_t * current_thread = (kthread_t *)slab_obj_alloc(kthread_allocator);
+        KASSERT(current_thread != NULL);
+        /* Set process which the thread belong to */
+        current_thread -> kt_proc = p;
+        /* Initialize the thread's stack */
+        char * thread_stack = alloc_stack();
+        KASSERT(thread_stack != NULL);
+        current_thread -> kt_kstack = thread_stack;
+        /* Initialize the thread context */
+        context_t thread_context;
+        context_setup(&thread_context, func, arg1, arg2, thread_stack, DEFAULT_STACK_SIZE, p -> p_pagedir);
+        current_thread -> kt_ctx = thread_context;
+        /* Initialize thread's stuff */
+        current_thread -> kt_retval = 0;
+        current_thread -> kt_errno = 0;
+        current_thread -> kt_cancelled = 0;
+        current_thread -> kt_wchan = NULL;
+        /* Initialize thread's state */
+        current_thread -> kt_state = KT_NO_STATE;
+        /* Initialize thread's link */
+        list_link_init(&current_thread -> kt_qlink);
+        list_link_init(&current_thread -> kt_plink);
+        /* Insert to process's thread list */
+        list_insert_tail(&p -> p_threads, &current_thread -> kt_plink);
+        dbg_print("Thread created successful in process %d", p -> p_pid);
+        return current_thread;
+        panic("Return in kthread_create()!!!\n");
+        /* Yu Sun Code Finish */
+        /*NOT_YET_IMPLEMENTED("PROCS: kthread_create");*/
         return NULL;
 }
 

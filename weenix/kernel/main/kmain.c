@@ -135,6 +135,7 @@ kmain()
 static void *
 bootstrap(int arg1, void *arg2)
 {
+        dbg(DBG_TEST,"Enter bootstrap()\n");
         /* necessary to finalize page table information */
         pt_template_init();
 
@@ -149,6 +150,8 @@ bootstrap(int arg1, void *arg2)
         curproc->p_state=PROC_RUNNING;
         curthr->kt_state=KT_RUN;
         context_make_active(&curthr->kt_ctx);
+
+        dbg(DBG_TEST,"Leave bootstrap()\n");
 
         NOT_YET_IMPLEMENTED("PROCS: bootstrap");
          /* ---------------------heguang-------------------- */
@@ -240,6 +243,7 @@ idleproc_run(int arg1, void *arg2)
 static kthread_t *
 initproc_create(void)
 {
+     dbg(DBG_TEST,"Enter initproc_create()\n");
     /* ---------------------heguang-------------------- */
     proc_t *init_process=proc_create("init_process");
     KASSERT(PID_INIT==init_process->p_pid);
@@ -248,6 +252,7 @@ initproc_create(void)
         NOT_YET_IMPLEMENTED("PROCS: initproc_create");
     return init_thread;
     /* ---------------------heguang-------------------- */
+     dbg(DBG_TEST,"Leave initproc_create()\n");
 }
 
 /**
@@ -264,6 +269,7 @@ initproc_create(void)
 static void *
 initproc_run(int arg1, void *arg2)
 {
+     dbg(DBG_TEST,"Enter initproc_run()\n");
     /* ---------------------heguang-------------------- */
 
     int status[TEST_NUMS];
@@ -287,6 +293,7 @@ initproc_run(int arg1, void *arg2)
     }
 
     /* ---------------------heguang-------------------- */
+     dbg(DBG_TEST,"Leave initproc_run()\n");
         NOT_YET_IMPLEMENTED("PROCS: initproc_run");
         return NULL;
 }

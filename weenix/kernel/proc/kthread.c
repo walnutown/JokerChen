@@ -140,10 +140,7 @@ kthread_cancel(kthread_t *kthr, void *retval)
         else {
                 if(kthr -> kt_state != KT_SLEEP) {
                         kthr -> kt_retval = retval;
-                        kthr -> kt_state = KT_EXITED;
-                        if(kthr -> kt_state == KT_SLEEP_CANCELLABLE) {
-                                sched_cancel(kthr);
-                        }
+                        sched_cancel(kthr);
                 }
         }
         /* Yu Sun Code Finish */

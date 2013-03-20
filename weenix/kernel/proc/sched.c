@@ -115,8 +115,7 @@ sched_queue_empty(ktqueue_t *q)
 void
 sched_sleep_on(ktqueue_t *q)
 {
-
-  NOT_YET_IMPLEMENTED("PROCS: sched_sleep_on");
+        NOT_YET_IMPLEMENTED("PROCS: sched_sleep_on");
 }
 
 
@@ -159,7 +158,15 @@ sched_broadcast_on(ktqueue_t *q)
 void
 sched_cancel(struct kthread *kthr)
 {
-        NOT_YET_IMPLEMENTED("PROCS: sched_cancel");
+        /* Yu Sun Code Start */
+        kthr -> kt_cancelled = 1;
+        /* Remove it from the wait queue, move it to runq */
+        if(kthr -> kt_state == KT_SLEEP_CANCELLABLE) {
+                ktqueue_remove(kthr -> kt_wchan, kthr);
+                sched_make_runnable(kthr);
+        }
+        /* Yu Sun Code Finish */
+        /*NOT_YET_IMPLEMENTED("PROCS: sched_cancel");*/
 }
 
 /*

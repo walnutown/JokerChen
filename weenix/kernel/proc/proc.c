@@ -96,6 +96,43 @@ proc_t *
 proc_create(char *name)
 {
         NOT_YET_IMPLEMENTED("PROCS: proc_create");
+    /* ---------------------heguang-------------------- */
+        proc_t* process=(proc_t*)slab_obj_alloc(proc_allocator);
+
+        process->p_pid=_proc_getid();
+        process->p_comm[PROC_NAME_LEN]=*name;
+
+        list_link_init(&process->p_threads);
+        list_link_init(&process->p_children);
+        
+        process->p_status=0;
+        process->p_state=PROC_RUNNING;
+        sched_queue_init(process->q_wait);
+        process->p_pagedir=pt_create_pagedir();
+       
+        list_init(&process->p_list_link);
+        list_init(&process->p_child_link);
+ 
+        if(process->pid==PID_IDLE)
+        {
+            process->p_pproc=NULL;
+            list_insert_tail(&_proc_list,&process->p_list_link);
+            list_insert_tail(&curproc->p_children,&process->p_child_link);
+        }
+        else if(process->p_pid==PID_INIT)
+        {
+            proc_initproc=process;
+            process->p_pproc=curproc;
+            list_insert_tail(&_proc_list,&process->p_list_link);
+        }
+        else
+        {
+            process->p_pproc=curproc;
+            list_insert_tail(&curproc->p_children,&process->p_child_link);
+            list_insert_tail(&_proc_list,&process->p_list_link);
+        }
+
+    /* ---------------------heguang-------------------- */
         return NULL;
 }
 
@@ -159,7 +196,7 @@ proc_t *
 proc_lookup(int pid)
 {
         proc_t *p;
-        list_iterate_begin(&_proc_list, p, proc_t, p_list_link) {
+        list_iterate_begin(&proc_allocator, p, proc_t, p_list_link) {
                 if (p->p_pid == pid) {
                         return p;
                 }

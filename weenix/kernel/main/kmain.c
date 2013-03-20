@@ -140,7 +140,8 @@ bootstrap(int arg1, void *arg2)
         /* ---------------------heguang-------------------- */
         proc_t *idle_process=proc_create("idle_proc");
         KASSERT(PID_IDLE==idle_process->p_pid);
-        kthread_t *idle_thread=kthread_create(idle_process,idleproc_run,0,NULL);//内含kthread context setup 
+        
+        kthread_t *idle_thread=kthread_create(idle_process,idleproc_run,0,NULL);
         curproc=idle_process;
         curthr=idle_thread;
 
@@ -292,7 +293,7 @@ test(int arg1, void *arg2)
 {
     /* ---------------------heguang-------------------- */
     dbg_print("test function start.\n");
-    //add test code here.
+    /*add test code here.*/
     dbg_print("test function return.\n");
     return NULL;
 }

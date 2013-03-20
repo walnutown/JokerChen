@@ -138,10 +138,13 @@ kthread_cancel(kthread_t *kthr, void *retval)
                 kthread_exit(retval);
         }
         else {
-                kthr -> kt_retval = retval;
-                kthr -> kt_cancelled = 1;
-                if(kthr -> kt_state == KT_SLEEP_CANCELLABLE) {
-                        sched_wakeup_on(kthr);
+                if(kthr -> kt_state != KT_SLEEP) {
+                        kthr -> kt_retval = retval;
+                        kthr -> kt_state = KT_EXITED;
+                        kthr -> kt_cancelled = 1;
+                        if(kthr -> kt_state == KT_SLEEP_CANCELLABLE) {
+                                sched_wakeup_on(kthr);
+                        }
                 }
         }
         /* Yu Sun Code Finish */
@@ -166,6 +169,7 @@ kthread_exit(void *retval)
         curthr -> kt_retval = retval;
         /* Set thread state to KT_EXITED */
         curthr -> kt_state = KT_EXITED;
+        curthr -> kt_cancelled = 1;
         /* Alerts the process that the currently executing thread has just exited */
         proc_thread_exited(retval);
         /* Yu Sun Code Finish */

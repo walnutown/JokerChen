@@ -133,7 +133,19 @@ kthread_destroy(kthread_t *t)
 void
 kthread_cancel(kthread_t *kthr, void *retval)
 {
-        NOT_YET_IMPLEMENTED("PROCS: kthread_cancel");
+        /* Yu Sun Code Start */
+        if(kthr == curthr) {
+                kthread_exit(retval);
+        }
+        else {
+                if(kthr -> kt_state = KT_SLEEP_CANCELLABLE) {
+                        kthr -> kt_retval = retval;
+                        kthr -> kt_cancelled = 1;
+                        sched_wakeup_on(kthr);
+                }
+        }
+        /* Yu Sun Code Finish */
+        /*NOT_YET_IMPLEMENTED("PROCS: kthread_cancel");*/
 }
 
 /*
@@ -149,7 +161,15 @@ kthread_cancel(kthread_t *kthr, void *retval)
 void
 kthread_exit(void *retval)
 {
-        NOT_YET_IMPLEMENTED("PROCS: kthread_exit");
+        /* Yu Sun Code Start */
+        /* Set thread return value */
+        curthr -> kt_retval = retval;
+        /* Set thread state to KT_EXITED */
+        curthr -> kt_state = KT_EXITED;
+        /* Alerts the process that the currently executing thread has just exited */
+        proc_thread_exited(retval);
+        /* Yu Sun Code Finish */
+        /*NOT_YET_IMPLEMENTED("PROCS: kthread_exit");*/
 }
 
 /*

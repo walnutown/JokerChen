@@ -98,40 +98,38 @@ proc_create(char *name)
         NOT_YET_IMPLEMENTED("PROCS: proc_create");
     /* ---------------------heguang-------------------- */
         proc_t* process=(proc_t*)slab_obj_alloc(proc_allocator);
+        memset(process,0,sizeof(proc_t));
 
         process->p_pid=_proc_getid();
-        process->p_comm[PROC_NAME_LEN]=*name;
+        strncpy(process->p_comm,name,PROC_NAME_LEN);
 
         list_init(&process->p_threads);
         list_init(&process->p_children);
         
         process->p_status=0;
         process->p_state=PROC_RUNNING;
-        sched_queue_init(process->q_wait);
+        sched_queue_init(process->p_wait);
         process->p_pagedir=pt_create_pagedir();
        
         list_link_init(&process->p_list_link);
         list_link_init(&process->p_child_link);
- 
+        list_insert_tail(&_proc_list,&process->p_list_link);
+
         if(process->p_pid==PID_IDLE)
         {
             process->p_pproc=NULL;
-            list_insert_tail(&_proc_list,&process->p_list_link);
         }
         else if(process->p_pid==PID_INIT)
         {
             proc_initproc=process;
             process->p_pproc=curproc;
             list_insert_tail(&curproc->p_children,&process->p_child_link);
-            list_insert_tail(&_proc_list,&process->p_list_link);
         }
         else
         {
             process->p_pproc=curproc;
             list_insert_tail(&curproc->p_children,&process->p_child_link);
-            list_insert_tail(&_proc_list,&process->p_list_link);
         }
-
     /* ---------------------heguang-------------------- */
         return process;
 }
@@ -165,13 +163,14 @@ proc_cleanup(int status)
 {
     /* ---------------------heguang-------------------- */
     /*init process 情况怎么处理?*/
+    KASSERT(curproc->p_pid!=PID_IDLE&&curproc->p_pid!=PID_INIT);
+
     if(curproc->p_pid!=PID_IDLE&&curproc->p_pid!=PID_INIT)
     {
         /*wake up the waiting parent*/
         if(curproc->p_pproc->p_wait.tq_size!=0)
         {
             sched_wakeup_on(&curproc->p_pproc->p_wait);
-
             /*remove child link?*/
             list_remove(&curproc->p_child_link);
         }
@@ -197,7 +196,7 @@ proc_cleanup(int status)
         curproc->p_status=status;
         /*remove list link?*/
         list_remove(&curproc->p_list_link);
-        //contex switch
+        /*contex switch*/
         sched_switch();
     }
     /* ---------------------heguang-------------------- */
@@ -222,16 +221,6 @@ proc_kill(proc_t *p, int status)
         }
         else
         {
-            kthread_t *thread;
-            list_iterate_begin(&p->p_threads,thread,kthread_t,kt_plink)
-            {
-                if(thread->kt_state!=KT_EXITED)
-                {
-                    kthread_cancel(thread,0);
-                    /*kthread_destroy(thread);*/
-                }
-            }list_iterate_end();
-
             /*clean up process*/
             if(p->p_pproc->p_wait.tq_size!=0)
             {
@@ -245,8 +234,7 @@ proc_kill(proc_t *p, int status)
                 {              
                     child->p_pproc=proc_initproc;
                     list_insert_tail(&proc_initproc->p_children,&child->p_child_link);
-                } 
-                list_iterate_end();
+                } list_iterate_end();
             }
             while(!list_empty(&p->p_children))
             {
@@ -270,17 +258,25 @@ void
 proc_kill_all()
 {
     /* ---------------------heguang-------------------- */
+    /*pagedir 回收?*/
     proc_t *link;
     list_iterate_begin(&_proc_list, link, proc_t, p_child_link) 
     {      
-        if(link!=proc_lookup(PID_IDLE)&&link!=proc_lookup(PID_INIT))
+        if((link->p_pproc->p_pid!=PID_IDLE)&&(link->p_pid!=PID_IDLE))
         {
+            kthread_t *thread;
+            list_iterate_begin(&link->p_threads,thread,kthread_t,kt_plink)
+            {
+                if(thread->kt_state!=KT_EXITED)
+                {
+                    kthread_destroy(thread);
+                }
+            }list_iterate_end();
             proc_kill(link,0);
         }
-    } 
-    list_iterate_end();
+    }list_iterate_end();
     /* ---------------------heguang-------------------- */
-        NOT_YET_IMPLEMENTED("PROCS: proc_kill_all");
+    NOT_YET_IMPLEMENTED("PROCS: proc_kill_all");
 }
 
 proc_t *
@@ -337,6 +333,7 @@ pid_t
 do_waitpid(pid_t pid, int options, int *status)
 {
     /* ---------------------heguang-------------------- */
+    /*busy wait?*/
     KASSERT((!(pid==-1||pid>0))||(options!=0));
     if(list_empty(&curproc->p_children))
         return -ECHILD;
@@ -355,10 +352,10 @@ do_waitpid(pid_t pid, int options, int *status)
                         if(thread->kt_state!=KT_EXITED)
                         {
                             kthread_destroy(thread);
-                         }                           }
+                        }                           
                     }list_iterate_end();
                     return child->p_pid;
-                }    
+                }
             }list_iterate_end();
         }while(1);
     }

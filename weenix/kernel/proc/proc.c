@@ -192,6 +192,7 @@ proc_cleanup(int status)
         {
             list_remove_tail(&curproc->p_children);
         }
+
         curproc->p_state=PROC_DEAD;
         curproc->p_status=status;
         /*remove list link?*/
@@ -405,7 +406,7 @@ do_exit(int status)
         {
             kthread_cancel(thread,0);
         }
-    }list_iterate_end();  
+    }list_iterate_end();
     proc_cleanup(0);
     /* ---------------------heguang-------------------- */
         NOT_YET_IMPLEMENTED("PROCS: do_exit");

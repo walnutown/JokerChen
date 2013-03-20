@@ -115,7 +115,8 @@ sched_queue_empty(ktqueue_t *q)
 void
 sched_sleep_on(ktqueue_t *q)
 {
-        NOT_YET_IMPLEMENTED("PROCS: sched_sleep_on");
+
+  NOT_YET_IMPLEMENTED("PROCS: sched_sleep_on");
 }
 
 

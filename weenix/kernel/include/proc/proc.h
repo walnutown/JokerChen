@@ -21,6 +21,7 @@ typedef struct proc {
 
         list_t          p_threads;       /* the process's thread list */
         list_t          p_children;      /* the process's children list */
+                                         /* p_children is the head of the list of children process of this process */
         struct proc    *p_pproc;         /* our parent process */
 
         int             p_status;        /* exit status */
@@ -31,6 +32,7 @@ typedef struct proc {
 
         list_link_t     p_list_link;     /* link on the list of all processes */
         list_link_t     p_child_link;    /* link on proc list of children */
+                                         /* p_child_link is the link of this process in its parents list of child process */
 
         /* VFS-related: */
         struct file    *p_files[NFILES]; /* open files */

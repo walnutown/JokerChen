@@ -194,7 +194,7 @@ proc_cleanup(int status)
             list_remove_tail(&curproc->p_children);
         }
         curproc->p_state=PROC_DEAD;
-
+        curproc->p_status=status;
         /*remove list link?*/
         list_remove(&curproc->p_list_link);
         //contex switch
@@ -252,7 +252,8 @@ proc_kill(proc_t *p, int status)
             {
                 list_remove_tail(&p->p_children);
             }
-            p->p_status=PROC_DEAD;
+            p->p_state=PROC_DEAD;
+            p->p_status=status;
             list_remove(&p->p_list_link);
         }
     /* ---------------------heguang-------------------- */
@@ -297,7 +298,7 @@ proc_lookup(int pid)
 list_t *
 proc_list()
 {
-        return &_proc_list;
+    return &_proc_list;
 }
 
 /*
@@ -312,11 +313,9 @@ void
 proc_thread_exited(void *retval)
 {
     /* ---------------------heguang-------------------- */
-    
-
-
+    proc_cleanup(0);
     /* ---------------------heguang-------------------- */
-        NOT_YET_IMPLEMENTED("PROCS: proc_thread_exited");
+    NOT_YET_IMPLEMENTED("PROCS: proc_thread_exited");
 }
 
 /* If pid is -1 dispose of one of the exited children of the current
@@ -337,8 +336,58 @@ proc_thread_exited(void *retval)
 pid_t
 do_waitpid(pid_t pid, int options, int *status)
 {
-        NOT_YET_IMPLEMENTED("PROCS: do_waitpid");
-        return 0;
+    /* ---------------------heguang-------------------- */
+    KASSERT((!(pid==-1||pid>0))||(options!=0));
+    if(list_empty(&curproc->p_children))
+        return -ECHILD;
+    proc_t *child;
+    if(pid==-1)
+    {
+        do
+        {
+            list_iterate_begin(&curproc->p_children,child,proc_t,p_child_link)
+            {
+                if(child->p_state==PROC_DEAD)
+                {
+                    *status=child->p_status;
+                    list_iterate_begin(&child->p_threads,thread,kthread_t,kt_plink)
+                    {
+                        if(thread->kt_state!=KT_EXITED)
+                        {
+                            kthread_destroy(thread);
+                         }                           }
+                    }list_iterate_end();
+                    return child->p_pid;
+                }    
+            }list_iterate_end();
+        }while(1);
+    }
+    else 
+    {
+        list_iterate_begin(&curproc->p_children,child,proc_t,p_child_link)
+        {
+            if(child->p_pid==pid)
+            {
+                while(1)
+                {
+                    if(child->p_state==PROC_DEAD)
+                        break;
+                }
+                *status=child->p_status;
+                list_iterate_begin(&child->p_threads,thread,kthread_t,kt_plink)
+                {
+                    if(thread->kt_state!=KT_EXITED)
+                    {
+                        kthread_destroy(thread);
+                    }                           
+                }list_iterate_end();
+                return child->p_pid;
+            }    
+        }list_iterate_end();
+        return -ECHILD;
+    }
+    /* ---------------------heguang-------------------- */
+    NOT_YET_IMPLEMENTED("PROCS: do_waitpid");   
 }
 
 /*
@@ -351,19 +400,17 @@ void
 do_exit(int status)
 {
     /* ---------------------heguang-------------------- */
-
     kthread_t *thread;
+    curproc->p_status=status;
     list_iterate_begin(&curproc->p_threads,thread,kthread_t,kt_plink)
     {
         if(thread->kt_state!=KT_EXITED)
         {
-            kthread_cancel(thread,retval);
+            kthread_cancel(thread,0);
         }
     }list_iterate_end();  
     proc_cleanup(0);
-
     /* ---------------------heguang-------------------- */
-
         NOT_YET_IMPLEMENTED("PROCS: do_exit");
 }
 

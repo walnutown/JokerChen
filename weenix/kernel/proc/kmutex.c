@@ -39,9 +39,9 @@ kmutex_init(kmutex_t *mtx)
  * No thread should ever try to lock a mutex it already has locked.
  */
 void
-kmutex_init(kmutex_t *mtx)
+kmutex_lock(kmutex_t *mtx)
 {
-    dbg(DBG_CORE,"Enter kmutex_init()\n");
+    dbg(DBG_CORE,"Enter kmutex_lock()\n");
 	/* ---------------------heguang-------------------- */
 	if(mtx->km_holder!=NULL)
 	{
@@ -50,7 +50,7 @@ kmutex_init(kmutex_t *mtx)
 	mtx->km_holder=curthr;
 	/* ---------------------heguang-------------------- */
 	NOT_YET_IMPLEMENTED("PROCS: kmutex_lock");
-    dbg(DBG_CORE,"Leave kmutex_init()\n");
+    dbg(DBG_CORE,"Leave kmutex_lock()\n");
 }
 
 /*

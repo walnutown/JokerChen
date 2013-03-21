@@ -183,11 +183,11 @@ proc_cleanup(int status)
     KASSERT(1 <= curproc->p_pid); /* this process should not be idle process */
     KASSERT(NULL != curproc->p_pproc); /* this process should have parent process*/
 
-    KASSERT(curproc->p_pid!=PID_IDLE&&curproc->p_pid!=PID_INIT);
+    KASSERT(curproc->p_pid!=PID_IDLE);
 
     if(curproc->p_state!=PROC_DEAD)
     {
-    if(curproc->p_pid!=PID_IDLE&&curproc->p_pid!=PID_INIT)
+    if(curproc->p_pid!=PID_IDLE)
     {
         /*wake up the waiting parent*/
         if(curproc->p_pproc->p_wait.tq_size!=0)

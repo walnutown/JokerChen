@@ -171,6 +171,7 @@ kthread_exit(void *retval)
         dbg(DBG_CORE,"Enter kthread_exit()\n");
         /* Yu Sun Code Start */
         /* Set thread return value */
+        
         curthr -> kt_retval = retval;
         /* Set thread state to KT_EXITED */
         curthr -> kt_state = KT_EXITED;

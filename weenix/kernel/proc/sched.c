@@ -257,12 +257,18 @@ sched_switch(void)
                 intr_setipl(curr_ipl);
                 intr_wait();
                 intr_setipl(IPL_HIGH);
+                if(new.kt_cancelled)
+                {
+                    curthr=new;
+                    curproc=new->kt_proc;
+                    context_switch(&old->kt_ctx,&new->kt_ctx);
+                    kthread_exit((void*)curthr->kt_retval);
+                }
                 new=ktqueue_dequeue(&kt_runq);
         
         }
        curthr=new;
        curproc=curthr->kt_proc;
-
        context_switch(&old->kt_ctx,&new->kt_ctx);
        
         intr_setipl(curr_ipl);

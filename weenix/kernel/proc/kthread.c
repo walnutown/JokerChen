@@ -77,6 +77,8 @@ kthread_create(struct proc *p, kthread_func_t func, long arg1, void *arg2)
         /* Yu Sun Code Start */
         /* Alloc the thread form slab chunk */
         kthread_t * current_thread = (kthread_t *)slab_obj_alloc(kthread_allocator);
+        memset(current_thread,0,sizeof(kthread_t));
+
         KASSERT(current_thread != NULL);
         /* Set process which the thread belong to */
         current_thread -> kt_proc = p;
@@ -136,10 +138,10 @@ void
 kthread_cancel(kthread_t *kthr, void *retval)
 {
         /* Yu Sun Code Start */
-        if(kthr == curthr) {
+        if(kthr == curthr) {/* KT_EXITED clean proc*/
                 kthread_exit(retval);
         }
-        else {
+        else {/**/
                 kthr -> kt_retval = retval;
                 sched_cancel(kthr);
         }

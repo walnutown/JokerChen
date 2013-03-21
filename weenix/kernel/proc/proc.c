@@ -301,11 +301,10 @@ proc_kill_all()
                 kthread_destroy(thread);
             }list_iterate_end();
             list_remove(&link->p_list_link);
-<<<<<<< HEAD
+
             
             dbg(DBG_CORE,"Begin pt_destory\n");
-=======
->>>>>>> procc
+
             pt_destroy_pagedir(link->p_pagedir);
             slab_obj_free(proc_allocator, link);
         }

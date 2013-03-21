@@ -295,6 +295,11 @@ initproc_create(void)
  * @param arg1 the first argument (unused)
  * @param arg2 the second argument (unused)
  */
+/* ----------------for test------------------- */
+kmutex_t * mtx;
+static void      *deadlock_test(int arg1, void *arg2);
+
+
 static void *
 initproc_run(int arg1, void *arg2)
 {
@@ -323,11 +328,32 @@ initproc_run(int arg1, void *arg2)
     }
 
     /* ---------------------heguang-------------------- */
+
+    /* ----------------deadlock---------------------- */
+    proc_t * proc1, * proc2;
+    kthread_t * kthr1, * kthr2;
+    kmutex_init(mtx);
+    proc1 = proc_create("proc1");
+    kthr1=kthread_create(proc1,deadlock_test,0,NULL);
+    proc2 = proc_create("proc2");
+    kthr2=kthread_create(proc2,deadlock_test,0,NULL);
+    sched_make_runnable(kthr1);
+    sched_make_runnable(kthr2);
+    /* ----------------deadlock---------------------- */
      /*--taohu--------dbg----------------*/
      dbg(DBG_CORE,"Leave initproc_run()\n");
         NOT_YET_IMPLEMENTED("PROCS: initproc_run");
         return NULL;
 }
+
+static void *
+deadlock_test(int arg1, void *arg2) {
+    dbg_print("deadlock_test function start.\n");
+    kmutex_lock(mtx);
+    dbg_print("deadlock_test function return.\n");
+    return NULL;
+}
+
 static void *
 test(int arg1, void *arg2)
 {

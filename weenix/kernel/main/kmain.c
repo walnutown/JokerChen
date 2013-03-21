@@ -296,7 +296,7 @@ initproc_create(void)
  * @param arg2 the second argument (unused)
  */
 /* ----------------for test------------------- */
-kmutex_t * mtx;
+kmutex_t mtx;
 static void      *deadlock_test(int arg1, void *arg2);
 
 
@@ -332,7 +332,9 @@ initproc_run(int arg1, void *arg2)
     /* ----------------deadlock---------------------- */
     proc_t * proc1, * proc2;
     kthread_t * kthr1, * kthr2;
-    kmutex_init(mtx);
+    /*slab_allocator_t * mutex_allocator = slab_allocator_create("mutex", sizeof(kmutex_t));*/
+    /*mtx = (kmutex_t *)slab_obj_alloc(mutex_allocator);*/
+    kmutex_init(&mtx);
     proc1 = proc_create("proc1");
     kthr1=kthread_create(proc1,deadlock_test,0,NULL);
     proc2 = proc_create("proc2");
@@ -349,7 +351,7 @@ initproc_run(int arg1, void *arg2)
 static void *
 deadlock_test(int arg1, void *arg2) {
     dbg_print("deadlock_test function start.\n");
-    kmutex_lock(mtx);
+    kmutex_lock(&mtx);
     dbg_print("deadlock_test function return.\n");
     return NULL;
 }

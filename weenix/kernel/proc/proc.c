@@ -100,7 +100,14 @@ proc_create(char *name)
         proc_t* process=(proc_t*)slab_obj_alloc(proc_allocator);
         memset(process,0,sizeof(proc_t));
 
-        process->p_pid=_proc_getid();
+        /*--taohu--------Gradeline requirement----------------*/
+        pid_t pid = _proc_getid();
+        KASSERT(PID_IDLE != pid || list_empty(&_proc_list)); /* pid can only
+be PID_IDLE if this is the first process */
+        KASSERT(PID_INIT != pid || PID_IDLE == curproc->p_pid); /* pid can
+only be PID_INIT when creating from idle process */
+
+        process->p_pid= pid;
         strncpy(process->p_comm,name,PROC_NAME_LEN);
 
         list_init(&process->p_threads);
@@ -131,6 +138,9 @@ proc_create(char *name)
             list_insert_tail(&curproc->p_children,&process->p_child_link);
         }
     /* ---------------------heguang-------------------- */
+
+       /*--taohu--------dbg----------------*/
+        dbg(DBG_TEST,"Leave proc_create()\n");
         return process;
 }
 
@@ -164,7 +174,11 @@ proc_cleanup(int status)
 {
     /* ---------------------heguang-------------------- */
     /*init process 情况怎么处理?*/
-    KASSERT(curproc->p_pid!=PID_IDLE&&curproc->p_pid!=PID_INIT);
+    dbg(DBG_TEST,"Enter proc_cleanup()\n");
+    /*--taohu--------Gradeline requirement----------------*/  
+    KASSERT(NULL != proc_initproc); /* should have an "init" process */
+    KASSERT(1 <= curproc->p_pid); /* this process should not be idle process*/
+    KASSERT(NULL != curproc->p_pproc); /* this process should have parent*/
 
     if(curproc->p_state!=PROC_DEAD)
     {
@@ -199,6 +213,9 @@ proc_cleanup(int status)
     }
 }
     /* ---------------------heguang-------------------- */
+
+    dbg(DBG_TEST,"Leave proc_cleanup()\n");
+
     NOT_YET_IMPLEMENTED("PROCS: proc_cleanup");
 }
 

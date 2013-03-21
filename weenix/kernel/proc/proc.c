@@ -108,7 +108,7 @@ proc_create(char *name)
         
         process->p_status=0;
         process->p_state=PROC_RUNNING;
-        sched_queue_init(process->p_wait);
+        sched_queue_init(&process->p_wait);
         process->p_pagedir=pt_create_pagedir();
        
         list_link_init(&process->p_list_link);
@@ -356,6 +356,7 @@ do_waitpid(pid_t pid, int options, int *status)
                 if(child->p_state==PROC_DEAD)
                 {
                     *status=child->p_status;
+                    kthread_t *thread;
                     list_iterate_begin(&child->p_threads,thread,kthread_t,kt_plink)
                     {
                         if(thread->kt_state!=KT_EXITED)
@@ -383,6 +384,7 @@ do_waitpid(pid_t pid, int options, int *status)
                         break;
                 }
                 *status=child->p_status;
+                kthread_t *thread;
                 list_iterate_begin(&child->p_threads,thread,kthread_t,kt_plink)
                 {
                     if(thread->kt_state!=KT_EXITED)
@@ -416,7 +418,7 @@ do_exit(int status)
     kthread_t *thread;
     curproc->p_status=status;
     kthread_exit(NULL);
-    
+
     /*kthread_exit proc_cleanup */
     /*
     list_iterate_begin(&curproc->p_threads,thread,kthread_t,kt_plink)

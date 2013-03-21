@@ -66,6 +66,7 @@ static pid_t next_pid = 0;
 static int
 _proc_getid()
 {
+        dbg(DBG_CORE,"Enter _proc_getid()\n");
         proc_t *p;
         pid_t pid = next_pid;
         while (1) {
@@ -73,6 +74,9 @@ failed:
                 list_iterate_begin(&_proc_list, p, proc_t, p_list_link) {
                         if (p->p_pid == pid) {
                                 if ((pid = (pid + 1) % PROC_MAX_COUNT) == next_pid) {
+
+                                        dbg(DBG_CORE,"Leave _proc_getid()\n");
+
                                         return -1;
                                 } else {
                                         goto failed;
@@ -80,6 +84,8 @@ failed:
                         }
                 } list_iterate_end();
                 next_pid = (pid + 1) % PROC_MAX_COUNT;
+
+                dbg(DBG_CORE,"Leave _proc_getid()\n");
                 return pid;
         }
 }
@@ -95,6 +101,7 @@ failed:
 proc_t *
 proc_create(char *name)
 {
+        dbg(DBG_CORE,"Enter _proc_create()\n");
         NOT_YET_IMPLEMENTED("PROCS: proc_create");
     /* ---------------------heguang-------------------- */
         proc_t* process=(proc_t*)slab_obj_alloc(proc_allocator);
@@ -131,6 +138,7 @@ proc_create(char *name)
             list_insert_tail(&curproc->p_children,&process->p_child_link);
         }
     /* ---------------------heguang-------------------- */
+        dbg(DBG_CORE,"Leave _proc_getid()\n");
         return process;
 }
 
@@ -164,6 +172,7 @@ proc_cleanup(int status)
 {
     /* ---------------------heguang-------------------- */
     /*init process 情况怎么处理?*/
+    dbg(DBG_CORE,"Enter proc_cleanup()\n");
     KASSERT(curproc->p_pid!=PID_IDLE&&curproc->p_pid!=PID_INIT);
 
     if(curproc->p_state!=PROC_DEAD)
@@ -199,6 +208,7 @@ proc_cleanup(int status)
     }
 }
     /* ---------------------heguang-------------------- */
+    dbg(DBG_CORE,"Leave proc_cleanup\n");
     NOT_YET_IMPLEMENTED("PROCS: proc_cleanup");
 }
 
@@ -215,6 +225,7 @@ void
 proc_kill(proc_t *p, int status)
 {
     /* ---------------------heguang-------------------- */
+        dbg(DBG_CORE,"Leave proc_kill\n");
         if(curproc==p)
         {
             do_exit(status);/*cancel thread proc clean non destroy*/
@@ -252,6 +263,7 @@ proc_kill(proc_t *p, int status)
             /*list_remove(&p->p_list_link);*/
         }
     /* ---------------------heguang-------------------- */
+        dbg(DBG_CORE,"Leave proc_kill\n");
         NOT_YET_IMPLEMENTED("PROCS: proc_kill");
 }
 
@@ -266,6 +278,7 @@ proc_kill_all()
 {
     /* ---------------------heguang-------------------- */
     /*pagedir 回收?*/
+    dbg(DBG_CORE,"Enter proc_kill_all\n");
     proc_t *link;
     list_iterate_begin(&_proc_list, link, proc_t, p_child_link) 
     {      
@@ -284,17 +297,23 @@ proc_kill_all()
     }list_iterate_end();
     /* ---------------------heguang-------------------- */
     NOT_YET_IMPLEMENTED("PROCS: proc_kill_all");
+    dbg(DBG_CORE,"Leave proc_kill_all\n");
 }
 
 proc_t *
 proc_lookup(int pid)
 {
+       dbg(DBG_CORE,"Enter proc_lookup\n");
         proc_t *p;
         list_iterate_begin(&_proc_list, p, proc_t, p_list_link) {
                 if (p->p_pid == pid) {
+
+                     dbg(DBG_CORE,"Leave proc_lookup\n");
                         return p;
                 }
         } list_iterate_end();
+
+        dbg(DBG_CORE,"Leave proc_lookup\n");
         return NULL;
 }
 
@@ -341,6 +360,7 @@ proc_thread_exited(void *retval)
 pid_t
 do_waitpid(pid_t pid, int options, int *status)
 {
+     dbg(DBG_CORE,"Enter do_waitpid\n");
     /* ---------------------heguang-------------------- */
     /*busy wait?*/
     KASSERT((pid==-1||pid>0)&&(options==0));
@@ -408,6 +428,8 @@ do_waitpid(pid_t pid, int options, int *status)
     }
     /* ---------------------heguang-------------------- */
     NOT_YET_IMPLEMENTED("PROCS: do_waitpid");   
+
+     dbg(DBG_CORE,"Leave do_waitpid\n");
 }
 
 /*
@@ -420,6 +442,7 @@ do_waitpid(pid_t pid, int options, int *status)
 void
 do_exit(int status)
 {
+    dbg(DBG_CORE,"Enter do_exit\n");
     /* ---------------------heguang-------------------- */
     kthread_t *thread;
     curproc->p_status=status;
@@ -438,6 +461,8 @@ do_exit(int status)
     */
     /* ---------------------heguang-------------------- */
         NOT_YET_IMPLEMENTED("PROCS: do_exit");
+
+        dbg(DBG_CORE,"Leave do_exit\n");
 }
 
 size_t

@@ -234,7 +234,7 @@ proc_kill(proc_t *p, int status)
             if(p->p_pproc->p_wait.tq_size!=0)
             {
                 sched_wakeup_on(&p->p_pproc->p_wait);
-                /*list_remove(&curproc->p_child_link);*/
+                
             }
             if(!list_empty(&p->p_children))
             {
@@ -248,6 +248,7 @@ proc_kill(proc_t *p, int status)
             
             p->p_state=PROC_DEAD;
             p->p_status=status;
+            list_remove(&p->p_child_link);
             /*list_remove(&p->p_list_link);*/
         }
     /* ---------------------heguang-------------------- */
@@ -276,7 +277,9 @@ proc_kill_all()
             {
                 kthread_destroy(thread);
             }list_iterate_end();
+            list_remove(&link->p_list_link);
             pt_destroy_pagedir(link->p_pagedir);
+            slab_obj_free(proc_allocator, link);
         }
     }list_iterate_end();
     /* ---------------------heguang-------------------- */
@@ -360,7 +363,9 @@ do_waitpid(pid_t pid, int options, int *status)
                             kthread_destroy(thread);
                         }                           
                     }list_iterate_end();
+                    list_remove(&child->p_child_link);
                     pt_destroy_pagedir(child->p_pagedir);
+                    slab_obj_free(proc_allocator, child);
                     return child->p_pid;
                 }
             }list_iterate_end();
@@ -385,6 +390,9 @@ do_waitpid(pid_t pid, int options, int *status)
                         kthread_destroy(thread);
                     }                           
                 }list_iterate_end();
+                list_remove(&child->p_child_link);
+                pt_destroy_pagedir(child->p_pagedir);
+                slab_obj_free(proc_allocator, child);
                 return child->p_pid;
             }    
         }list_iterate_end();

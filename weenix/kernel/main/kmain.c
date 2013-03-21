@@ -136,7 +136,7 @@ static void *
 bootstrap(int arg1, void *arg2)
 {
         /*--taohu--------dbg----------------*/
-        dbg(DBG_TEST,"Enter bootstrap()\n");
+        dbg(DBG_CORE,"Enter bootstrap()\n");
 
         /* necessary to finalize page table information */
         pt_template_init();
@@ -164,7 +164,7 @@ process has been created successfully */
         context_make_active(&curthr->kt_ctx);
 
         /*--taohu--------dbg----------------*/
-        dbg(DBG_TEST,"Leave bootstrap()\n");
+        dbg(DBG_CORE,"Leave bootstrap()\n");
 
         NOT_YET_IMPLEMENTED("PROCS: bootstrap");
          /* ---------------------heguang-------------------- */
@@ -189,7 +189,7 @@ static void *
 idleproc_run(int arg1, void *arg2)
 {
         /*--taohu--------dbg----------------*/
-        dbg(DBG_TEST,"Enter idleproc_run()\n");
+        dbg(DBG_CORE,"Enter idleproc_run()\n");
 
         int status;
         pid_t child;
@@ -244,7 +244,7 @@ idleproc_run(int arg1, void *arg2)
         GDB_CALL_HOOK(shutdown);
         hard_shutdown();
        /*--taohu--------dbg----------------*/
-        dbg(DBG_TEST,"Enter idleproc_run()\n");
+        dbg(DBG_CORE,"Enter idleproc_run()\n");
         return NULL;
 }
 
@@ -262,7 +262,7 @@ static kthread_t *
 initproc_create(void)
 {
      /*--taohu--------dbg----------------*/
-     dbg(DBG_TEST,"Enter initproc_create()\n");
+     dbg(DBG_CORE,"Enter initproc_create()\n");
     /* ---------------------heguang-------------------- */
     proc_t *init_process=proc_create("init_process");
 
@@ -281,7 +281,7 @@ initproc_create(void)
     return init_thread;
     /* ---------------------heguang-------------------- */
      /*--taohu--------dbg----------------*/
-     dbg(DBG_TEST,"Leave initproc_create()\n");
+     dbg(DBG_CORE,"Leave initproc_create()\n");
 }
 
 /**
@@ -299,7 +299,7 @@ static void *
 initproc_run(int arg1, void *arg2)
 {
      /*--taohu--------dbg----------------*/
-     dbg(DBG_TEST,"Enter initproc_run()\n");
+     dbg(DBG_CORE,"Enter initproc_run()\n");
     /* ---------------------heguang-------------------- */
 
     int status[TEST_NUMS];
@@ -324,7 +324,7 @@ initproc_run(int arg1, void *arg2)
 
     /* ---------------------heguang-------------------- */
      /*--taohu--------dbg----------------*/
-     dbg(DBG_TEST,"Leave initproc_run()\n");
+     dbg(DBG_CORE,"Leave initproc_run()\n");
         NOT_YET_IMPLEMENTED("PROCS: initproc_run");
         return NULL;
 }

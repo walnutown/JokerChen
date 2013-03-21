@@ -95,8 +95,10 @@ ktqueue_remove(ktqueue_t *q, kthread_t *thr)
 void
 sched_queue_init(ktqueue_t *q)
 {
+        dbg(DBG_CORE,"Enter sched_queue_init()\n");
         list_init(&q->tq_list);
         q->tq_size = 0;
+        dbg(DBG_CORE,"Return sched_queue_init()\n");
 }
 
 int

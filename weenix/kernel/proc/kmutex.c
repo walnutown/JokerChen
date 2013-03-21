@@ -1,9 +1,5 @@
 /*
-Since the kernel is multi-threaded, we need some way to ensure that certain critical
-paths are not executed simultaneously by multiple threads. Once mechanism you will 
-need is the mutex. Feel free to implement semaphores, condition variables, or 
-read-write locks as well if you so desire, though they are in no way necessary to have
-a functioning kernel.
+Since the kernel is multi-threaded, we need some way to ensure that certain critical paths are not executed simultaneously by multiple threads. Once mechanism you will need is the mutex. Feel free to implement semaphores, condition variables, or read-write locks as well if you so desire, though they are in no way necessary to have a functioning kernel.
 Functions you will need to write in proc/kmutex.c:
 void kmutex_init(kmutex_t *mtx);
 void kmutex_lock(kmutex_t *mtx);
@@ -107,6 +103,11 @@ kmutex_unlock(kmutex_t *mtx)
 {
     KASSERT(curthr && (curthr == mtx->km_holder));
     
+    if(mtx->km_holder!=NULL)
+    {
+    dbg(DBG_CORE,"mutex holder before lock pid: %d\n",mtx->km_holder->kt_proc->p_pid);
+    }
+
     dbg(DBG_CORE,"Enter kmutex_unlock()\n");
     /* ---------------------heguang-------------------- */
     if(mtx->km_waitq.tq_size==0)
@@ -117,7 +118,10 @@ kmutex_unlock(kmutex_t *mtx)
     {
     	mtx->km_holder=sched_wakeup_on(&mtx->km_waitq);
     }
-
+    if(mtx->km_holder!=NULL)
+    {
+    dbg(DBG_CORE,"mutex holder after lock pid: %d\n",mtx->km_holder->kt_proc->p_pid);
+    }
     KASSERT(curthr != mtx->km_holder);
     dbg(DBG_CORE,"Leave kmutex_unlock()\n");
     /* ---------------------heguang-------------------- */

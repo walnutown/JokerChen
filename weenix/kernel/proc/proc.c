@@ -304,10 +304,14 @@ proc_kill_all()
         proc_info(link, buffer, 1024);
         dbg_print("%s", buffer);
         if(link->p_pproc != NULL)
+        {
         if((link->p_pproc->p_pid!=PID_IDLE)&&(link->p_pid!=PID_IDLE))
         {
+            kthread_t *thread= list_item((&link->p_threads)->l_next,kthread_t,kt_plink);
+            if(thread->kt_state!=KT_SLEEP)
+            {
             proc_kill(link,0);
-            kthread_t *thread;
+            
             list_iterate_begin(&link->p_threads,thread,kthread_t,kt_plink)
             {
                 kthread_destroy(thread);
@@ -319,6 +323,8 @@ proc_kill_all()
 
             pt_destroy_pagedir(link->p_pagedir);
             slab_obj_free(proc_allocator, link);
+            }
+        }
         }
     }list_iterate_end();
     proc_list_info(NULL, buffer, 1024);

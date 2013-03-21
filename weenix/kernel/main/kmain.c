@@ -296,8 +296,12 @@ initproc_create(void)
  * @param arg2 the second argument (unused)
  */
 /* ----------------for test------------------- */
-kmutex_t mtx;
+kmutex_t          mtx, pc_mutex;
 static void      *deadlock_test(int arg1, void *arg2);
+int               share_resource;
+static void      *producer(int arg1, void *arg2);
+static void      *consumer(int arg1, void *arg2);
+ktqueue_t         kt_wproq, kt_wconq;
 
 
 static void *
@@ -309,8 +313,6 @@ initproc_run(int arg1, void *arg2)
     /* ----------------deadlock---------------------- */
     proc_t * proc1, * proc2;
     kthread_t * kthr1, * kthr2;
-    /*slab_allocator_t * mutex_allocator = slab_allocator_create("mutex", sizeof(kmutex_t));*/
-    /*mtx = (kmutex_t *)slab_obj_alloc(mutex_allocator);*/
     kmutex_init(&mtx);
     proc1 = proc_create("proc1");
     kthr1=kthread_create(proc1,deadlock_test,0,NULL);
@@ -320,6 +322,20 @@ initproc_run(int arg1, void *arg2)
     sched_make_runnable(kthr2);
     /* ----------------deadlock---------------------- */
 
+    /* ----------------producer/consumer---------------------- */
+    proc_t * pproducer, * pconsumer;
+    kthread_t * kproducer, * kconsumer;
+    kmutex_init(&pc_mutex);
+    pproducer = proc_create("producer");
+    kproducer=kthread_create(pproducer,producer,0,NULL);
+    pconsumer = proc_create("consumer");
+    kconsumer=kthread_create(pconsumer,consumer,0,NULL);
+    sched_queue_init(&kt_wproq);
+    sched_queue_init(&kt_wconq);
+    sched_make_runnable(kproducer);
+    sched_make_runnable(kconsumer);
+    /* ----------------producer/consumer---------------------- */
+
     /* ---------------------heguang-------------------- */
 
     int status[TEST_NUMS];
@@ -327,14 +343,13 @@ initproc_run(int arg1, void *arg2)
     proc_t *process[TEST_NUMS];
     kthread_t *thread[TEST_NUMS];
     int i;
-    for(i=0;i<TEST_NUMS - 2;i++)
+    for(i=0;i<TEST_NUMS - 4;i++)
     {
         process[i]=proc_create("test_process");
         thread[i]=kthread_create(process[i],test,0,NULL);
         sched_make_runnable(thread[i]);
     }
     i=0;
-    proc_kill_all();
     while(!list_empty(&curproc->p_children))
     {
         child[i]=do_waitpid(-1,0,&status[i]);
@@ -352,6 +367,55 @@ initproc_run(int arg1, void *arg2)
 }
 
 static void *
+producer(int arg1, void *arg2) {
+    int i = 0;
+    while(i < 10) {
+        dbg_print("in producer proc\n");
+        kmutex_lock(&pc_mutex);
+
+        dbg_print("producer proc get mutex\n");
+        if(share_resource == 0) {
+            share_resource = 1;
+            i++;
+            dbg_print("producer proc produce resourcs %d, wakeup consumer proc\n", i);
+            kmutex_unlock(&pc_mutex);
+            sched_wakeup_on(&kt_wconq);
+        }
+        else {
+            dbg_print("producer proc wait for consumer proc\n");
+            kmutex_unlock(&pc_mutex);
+            sched_wakeup_on(&kt_wconq);
+            sched_sleep_on(&kt_wproq);
+        }
+    }
+    return NULL;
+}
+
+static void *
+consumer(int arg1, void *arg2) {
+    int i = 0;
+    while(i < 10) {
+        dbg_print("in consumer proc\n");
+        kmutex_lock(&pc_mutex);
+        dbg_print("consumer proc get mutex\n");
+        if(share_resource == 1) {
+            share_resource = 0;
+            i++;
+            dbg_print("consumer proc consume resourcs %d, wakeup producer proc\n", i);
+            kmutex_unlock(&pc_mutex);
+            sched_wakeup_on(&kt_wproq);
+        }
+        else {
+            dbg_print("consumer proc wait for producer proc\n");
+            kmutex_unlock(&pc_mutex);
+            sched_wakeup_on(&kt_wproq);
+            sched_sleep_on(&kt_wconq);
+        }
+    }
+    return NULL;
+}
+
+static void *
 deadlock_test(int arg1, void *arg2) {
     dbg_print("deadlock_test function start.\n");
     kmutex_lock(&mtx);
@@ -365,9 +429,9 @@ test(int arg1, void *arg2)
     /* ---------------------heguang-------------------- */
     dbg_print("test function start.\n");
     /*add test code here.*/
-    while(1) {
+    /*while(1) {
 
-    }
+    }*/
     dbg_print("test function return.\n");
     return NULL;
 }

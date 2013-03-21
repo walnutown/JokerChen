@@ -59,7 +59,7 @@ kmutex_lock_cancellable(kmutex_t *mtx)
     /* ---------------------heguang-------------------- */
     if(mtx->km_holder!=NULL)
     {
-    	int val=(sched_cancellable_sleep_on(&mtx->km_waitq)==-EINTR);
+    	int val=sched_cancellable_sleep_on(&mtx->km_waitq);
     	if(val!=-EINTR)/*thread is not cancelled*/
     	{
     		mtx->km_holder=curthr;
@@ -100,7 +100,6 @@ kmutex_unlock(kmutex_t *mtx)
     else
     {
     	mtx->km_holder=sched_wakeup_on(&mtx->km_waitq);
-    	sched_make_runnable(mtx->km_holder);
     }
     /* ---------------------heguang-------------------- */
     NOT_YET_IMPLEMENTED("PROCS: kmutex_unlock");

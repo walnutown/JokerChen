@@ -119,13 +119,8 @@ sched_sleep_on(ktqueue_t *q)
         curthr->kt_state=KT_SLEEP;
         ktqueue_enqueue(q,curthr);
         sched_switch();
-        /*while(curthr->kt_state)
-        {
-
-        }*/
         /* ---------------------heguang-------------------- */
   NOT_YET_IMPLEMENTED("PROCS: sched_sleep_on");
-
 }
 
 
@@ -252,11 +247,12 @@ sched_switch(void)
         kthread_t *old=curthr;
         kthread_t *new=ktqueue_dequeue(&kt_runq);
        
-       while(new==NULL||new.kt_cancelled==1)
+       while(new==NULL)
        {
                 intr_setipl(curr_ipl);
                 intr_wait();
                 intr_setipl(IPL_HIGH);
+                /*
                 if(new.kt_cancelled)
                 {
                     curthr=new;
@@ -264,15 +260,15 @@ sched_switch(void)
                     context_switch(&old->kt_ctx,&new->kt_ctx);
                     kthread_exit((void*)curthr->kt_retval);
                 }
+                */
                 new=ktqueue_dequeue(&kt_runq);
         
         }
        curthr=new;
        curproc=curthr->kt_proc;
+       intr_setipl(curr_ipl);
        context_switch(&old->kt_ctx,&new->kt_ctx);
        
-        intr_setipl(curr_ipl);
-
         /* ---------------------heguang-------------------- */
         NOT_YET_IMPLEMENTED("PROCS: sched_switch");
 }

@@ -416,6 +416,7 @@ do_exit(int status)
     kthread_t *thread;
     curproc->p_status=status;
     kthread_exit(NULL);
+    
     /*kthread_exit proc_cleanup */
     /*
     list_iterate_begin(&curproc->p_threads,thread,kthread_t,kt_plink)

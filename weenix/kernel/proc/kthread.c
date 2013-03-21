@@ -74,6 +74,8 @@ free_stack(char *stack)
 kthread_t *
 kthread_create(struct proc *p, kthread_func_t func, long arg1, void *arg2)
 {
+        KASSERT(NULL != p); /* the process should not be NULL */
+
         dbg(DBG_CORE,"Enter kthread_create()\n");
         /* Yu Sun Code Start */
         /* Alloc the thread form slab chunk */
@@ -141,6 +143,8 @@ kthread_destroy(kthread_t *t)
 void
 kthread_cancel(kthread_t *kthr, void *retval)
 {
+        KASSERT(NULL != kthr); /* should have thread */
+
         dbg(DBG_CORE,"Enter kthread_cancel()\n");
         /* Yu Sun Code Start */
         if(kthr == curthr) {/* KT_EXITED clean proc*/
@@ -168,6 +172,11 @@ kthread_cancel(kthread_t *kthr, void *retval)
 void
 kthread_exit(void *retval)
 {
+        KASSERT(!curthr->kt_wchan); /* queue should be empty */
+        KASSERT(!curthr->kt_qlink.l_next && !curthr->kt_qlink.l_prev); /*
+queue should be empty */
+        KASSERT(curthr->kt_proc == curproc);
+
         dbg(DBG_CORE,"Enter kthread_exit()\n");
         /* Yu Sun Code Start */
         /* Set thread return value */

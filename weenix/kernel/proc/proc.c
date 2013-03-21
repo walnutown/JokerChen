@@ -102,14 +102,11 @@ proc_t *
 proc_create(char *name)
 {
         dbg(DBG_CORE,"Enter _proc_create()\n");
-        NOT_YET_IMPLEMENTED("PROCS: proc_create");
 
         pid_t pid = _proc_getid();
         dbg(DBG_CORE,"Process get pid %i\n", pid);
-        KASSERT(PID_IDLE != pid || list_empty(&_proc_list)); /* pid can only
-be PID_IDLE if this is the first process */
-        KASSERT(PID_INIT != pid || PID_IDLE == curproc->p_pid); /* pid can
-only be PID_INIT when creating from idle process */
+        KASSERT(PID_IDLE != pid || list_empty(&_proc_list)); 
+        KASSERT(PID_INIT != pid || PID_IDLE == curproc->p_pid); 
     /* ---------------------heguang-------------------- */
         proc_t* process=(proc_t*)slab_obj_alloc(proc_allocator);
         memset(process,0,sizeof(proc_t));
@@ -220,7 +217,6 @@ proc_cleanup(int status)
 }
     /* ---------------------heguang-------------------- */
     dbg(DBG_CORE,"Leave proc_cleanup\n");
-    NOT_YET_IMPLEMENTED("PROCS: proc_cleanup");
 }
 
 /*
@@ -280,7 +276,6 @@ proc_kill(proc_t *p, int status)
         }
     /* ---------------------heguang-------------------- */
         dbg(DBG_CORE,"Leave proc_kill\n");
-        NOT_YET_IMPLEMENTED("PROCS: proc_kill");
 }
 
 /*
@@ -330,7 +325,6 @@ proc_kill_all()
     proc_list_info(NULL, buffer, 1024);
     dbg_print("%s", buffer);
     /* ---------------------heguang-------------------- */
-    NOT_YET_IMPLEMENTED("PROCS: proc_kill_all");
     dbg(DBG_CORE,"Leave proc_kill_all\n");
 }
 
@@ -372,8 +366,6 @@ proc_thread_exited(void *retval)
     /* ---------------------heguang-------------------- */
     proc_cleanup(0);
     /* ---------------------heguang-------------------- */
-    NOT_YET_IMPLEMENTED("PROCS: proc_thread_exited");
-
     dbg(DBG_CORE,"Enter proc_thread_exited\n");
 }
 
@@ -474,7 +466,6 @@ do_waitpid(pid_t pid, int options, int *status)
         return -ECHILD;
     }
     /* ---------------------heguang-------------------- */
-    NOT_YET_IMPLEMENTED("PROCS: do_waitpid");   
 
      dbg(DBG_CORE,"Leave do_waitpid\n");
 }
@@ -507,8 +498,6 @@ do_exit(int status)
     proc_cleanup(0);
     */
     /* ---------------------heguang-------------------- */
-        NOT_YET_IMPLEMENTED("PROCS: do_exit");
-
         dbg(DBG_CORE,"Leave do_exit\n");
 }
 

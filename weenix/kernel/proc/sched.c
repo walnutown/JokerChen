@@ -125,7 +125,6 @@ sched_sleep_on(ktqueue_t *q)
         /* ---------------------heguang-------------------- */
         dbg(DBG_CORE,"Leave sched_sleep_on()\n");
 
-  NOT_YET_IMPLEMENTED("PROCS: sched_sleep_on");
 }
 
 
@@ -158,7 +157,6 @@ sched_cancellable_sleep_on(ktqueue_t *q)
 
         panic("Return in sched_cancellable_sleep_on()!!!\n");
     /* ---------------------heguang-------------------- */
-        NOT_YET_IMPLEMENTED("PROCS: sched_cancellable_sleep_on");
 }
 
 kthread_t *
@@ -175,7 +173,6 @@ sched_wakeup_on(ktqueue_t *q)
         sched_make_runnable(waked);
 
     }       
-        NOT_YET_IMPLEMENTED("PROCS: sched_wakeup_on");
         dbg(DBG_CORE,"Leave sched_wakeup_on()\n");
         return waked;
 }
@@ -189,8 +186,7 @@ sched_broadcast_on(ktqueue_t *q)
       {
         sched_wakeup_on(q);
       } 
-        NOT_YET_IMPLEMENTED("PROCS: sched_broadcast_on");
-        dbg(DBG_CORE,"Leave sched_broadcast_on()\n");
+    dbg(DBG_CORE,"Leave sched_broadcast_on()\n");
 }
 
 /*
@@ -215,8 +211,6 @@ sched_cancel(struct kthread *kthr)
         }
         dbg(DBG_CORE,"Leave sched_cancel()\n");
         /* Yu Sun Code Finish */
-        /*NOT_YET_IMPLEMENTED("PROCS: sched_cancel");*/
-
 }
 
 /*
@@ -290,7 +284,6 @@ sched_switch(void)
        context_switch(&old->kt_ctx,&new->kt_ctx);
        
         /* ---------------------heguang-------------------- */
-        NOT_YET_IMPLEMENTED("PROCS: sched_switch");
 }
 
 /*
@@ -322,7 +315,6 @@ sched_make_runnable(kthread_t *thr)
         intr_setipl(curr_ipl);
     dbg(DBG_CORE,"Leave sched_make_runnable()\n");
         /* ---------------------heguang-------------------- */
-        NOT_YET_IMPLEMENTED("PROCS: sched_make_runnable");
 }
 
 

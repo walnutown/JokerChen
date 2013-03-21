@@ -109,7 +109,6 @@ kthread_create(struct proc *p, kthread_func_t func, long arg1, void *arg2)
         return current_thread;
         panic("Return in kthread_create()!!!\n");
         /* Yu Sun Code Finish */
-        /*NOT_YET_IMPLEMENTED("PROCS: kthread_create");*/
         dbg(DBG_CORE,"Leave kthread_create()\n");
         return NULL;
 }
@@ -155,7 +154,6 @@ kthread_cancel(kthread_t *kthr, void *retval)
                 sched_cancel(kthr);
         }
         /* Yu Sun Code Finish */
-        /*NOT_YET_IMPLEMENTED("PROCS: kthread_cancel");*/
         dbg(DBG_CORE,"Leave kthread_cancel()\n");
 }
 
@@ -187,7 +185,6 @@ queue should be empty */
         /* Alerts the process that the currently executing thread has just exited */
         proc_thread_exited(retval);
         /* Yu Sun Code Finish */
-        /*NOT_YET_IMPLEMENTED("PROCS: kthread_exit");*/
         dbg(DBG_CORE,"Leave kthread_exit()\n");
 }
 

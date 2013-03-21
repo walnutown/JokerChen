@@ -166,9 +166,7 @@ process has been created successfully */
         /*--taohu--------dbg----------------*/
         dbg(DBG_CORE,"Leave bootstrap()\n");
 
-        NOT_YET_IMPLEMENTED("PROCS: bootstrap");
-         /* ---------------------heguang-------------------- */
-
+        /* ---------------------heguang-------------------- */
        panic("weenix returned to bootstrap()!!! BAD!!!\n");
         return NULL;
 }
@@ -261,26 +259,14 @@ idleproc_run(int arg1, void *arg2)
 static kthread_t *
 initproc_create(void)
 {
-     /*--taohu--------dbg----------------*/
-     dbg(DBG_CORE,"Enter initproc_create()\n");
-    /* ---------------------heguang-------------------- */
+    dbg(DBG_CORE,"Enter initproc_create()\n");
     proc_t *init_process=proc_create("init_process");
-
-    /*--taohu--------Gradeline requirement----------------*/
     KASSERT(NULL != init_process);
     KASSERT(PID_INIT==init_process->p_pid);
-    /*--taohu---------------------------------------------*/
-
-    kthread_t *init_thread=kthread_create(init_process,initproc_run,0,NULL);
-
-    /*--taohu--------Gradeline requirement----------------*/
+    kthread_t *init_thread=kthread_create(init_process,initproc_run,0,NULL);    
     KASSERT(NULL != init_thread);
-    /*--taohu---------------------------------------------*/
-
-        NOT_YET_IMPLEMENTED("PROCS: initproc_create");
     return init_thread;
     /* ---------------------heguang-------------------- */
-     /*--taohu--------dbg----------------*/
      dbg(DBG_CORE,"Leave initproc_create()\n");
 }
 
@@ -295,6 +281,7 @@ initproc_create(void)
  * @param arg1 the first argument (unused)
  * @param arg2 the second argument (unused)
  */
+ /* Yu Sun Code Start */
 /* ----------------for test------------------- */
 kmutex_t          mtx, pc_mutex;
 static void      *deadlock_test(int arg1, void *arg2);
@@ -362,8 +349,7 @@ initproc_run(int arg1, void *arg2)
 
      /*--taohu--------dbg----------------*/
      dbg(DBG_CORE,"Leave initproc_run()\n");
-        NOT_YET_IMPLEMENTED("PROCS: initproc_run");
-        return NULL;
+    return NULL;
 }
 
 static void *
@@ -435,6 +421,7 @@ test(int arg1, void *arg2)
     dbg_print("test function return.\n");
     return NULL;
 }
+ /* Yu Sun Code Finish */
 
 /**
  * Clears all interrupts and halts, meaning that we will never run

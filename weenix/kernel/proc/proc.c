@@ -288,7 +288,7 @@ proc_kill_all()
     proc_t *link;
     list_iterate_begin(&_proc_list, link, proc_t, p_child_link) 
     {      
-        if((link->p_pproc->p_pid!=PID_IDLE)&&(link->p_pid!=PID_IDLE))
+        if((link->p_pproc->p_pid!=PID_IDLE)&&(link->p_pid!=PID_IDLE)&&(link!=curproc))
         {
             proc_kill(link,0);
             kthread_t *thread;
@@ -297,8 +297,14 @@ proc_kill_all()
                 kthread_destroy(thread);
             }list_iterate_end();
             list_remove(&link->p_list_link);
+            dbg(DBG_CORE,"Begin pt_destory\n");
             pt_destroy_pagedir(link->p_pagedir);
+            dbg(DBG_CORE,"Finish pt_destory\n");
+
+            dbg(DBG_CORE,"Begin slab_free\n");
             slab_obj_free(proc_allocator, link);
+            dbg(DBG_CORE,"Finish slab_free\n");
+
         }
     }list_iterate_end();
     /* ---------------------heguang-------------------- */
@@ -394,8 +400,15 @@ do_waitpid(pid_t pid, int options, int *status)
                         }                           
                     }list_iterate_end();
                     list_remove(&child->p_child_link);
+
+                     dbg(DBG_CORE,"Begin pt_destory\n");
                     pt_destroy_pagedir(child->p_pagedir);
+                     dbg(DBG_CORE,"Finish pt_destory\n");
+
+                      dbg(DBG_CORE,"Begin pt_destory\n");
                     slab_obj_free(proc_allocator, child);
+                     dbg(DBG_CORE,"Finish pt_destory\n");
+
                     return child->p_pid;
                 }
             }list_iterate_end();
@@ -422,8 +435,15 @@ do_waitpid(pid_t pid, int options, int *status)
                             }                           
                         }list_iterate_end();
                         list_remove(&child->p_child_link);
+
+                        dbg(DBG_CORE,"Begin pt_destory\n");
                         pt_destroy_pagedir(child->p_pagedir);
+                        dbg(DBG_CORE,"Finish pt_destory\n");
+
+                        dbg(DBG_CORE,"Begin pt_destory\n");
                         slab_obj_free(proc_allocator, child);
+                        dbg(DBG_CORE,"Finish pt_destory\n");
+
                         return child->p_pid;
                     }
                     else

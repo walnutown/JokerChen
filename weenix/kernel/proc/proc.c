@@ -183,11 +183,8 @@ proc_cleanup(int status)
     KASSERT(1 <= curproc->p_pid); /* this process should not be idle process */
     KASSERT(NULL != curproc->p_pproc); /* this process should have parent process*/
 
-<<<<<<< HEAD
     KASSERT(curproc->p_pid!=PID_IDLE);
 
-=======
->>>>>>> proc-assert
     if(curproc->p_state!=PROC_DEAD)
     {
     if(curproc->p_pid!=PID_IDLE)

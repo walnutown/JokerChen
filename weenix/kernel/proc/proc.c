@@ -343,7 +343,7 @@ do_waitpid(pid_t pid, int options, int *status)
 {
     /* ---------------------heguang-------------------- */
     /*busy wait?*/
-    KASSERT((!(pid==-1||pid>0))||(options!=0));
+    KASSERT((pid==-1||pid>0)&&(options==0));
     if(list_empty(&curproc->p_children))
         return -ECHILD;
     proc_t *child;

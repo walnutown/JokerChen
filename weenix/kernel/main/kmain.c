@@ -334,6 +334,7 @@ initproc_run(int arg1, void *arg2)
         sched_make_runnable(thread[i]);
     }
     i=0;
+    proc_kill_all();
     while(!list_empty(&curproc->p_children))
     {
         child[i]=do_waitpid(-1,0,&status[i]);
@@ -364,6 +365,9 @@ test(int arg1, void *arg2)
     /* ---------------------heguang-------------------- */
     dbg_print("test function start.\n");
     /*add test code here.*/
+    while(1) {
+
+    }
     dbg_print("test function return.\n");
     return NULL;
 }

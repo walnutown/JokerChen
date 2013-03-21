@@ -105,6 +105,7 @@ proc_create(char *name)
         NOT_YET_IMPLEMENTED("PROCS: proc_create");
 
         pid_t pid = _proc_getid();
+        dbg(DBG_CORE,"Process get pid %i\n", pid);
         KASSERT(PID_IDLE != pid || list_empty(&_proc_list)); /* pid can only
 be PID_IDLE if this is the first process */
         KASSERT(PID_INIT != pid || PID_IDLE == curproc->p_pid); /* pid can
@@ -235,27 +236,31 @@ void
 proc_kill(proc_t *p, int status)
 {
     /* ---------------------heguang-------------------- */
-        dbg(DBG_CORE,"Leave proc_kill\n");
+        dbg(DBG_CORE,"Enter proc_kill\n");
         if(curproc==p)
         {
+            dbg(DBG_CORE,"Enter do_exit\n");
             do_exit(status);/*cancel thread proc clean non destroy*/
         }
         else
         {
+            dbg(DBG_CORE,"Process %i is in kill\n", p -> p_pid);
             /*clean up process cancel thread clean proc*/
             kthread_t * thread; 
             list_iterate_begin(&p->p_threads,thread,kthread_t,kt_plink)
             {
+                dbg(DBG_CORE,"Enter cancel thread\n");
                 if(thread->kt_state!=KT_EXITED)
                 {
                     kthread_cancel(thread,0);
                 }
             }list_iterate_end();
+            dbg(DBG_CORE,"All thread canceled\n");
 
             if(p->p_pproc->p_wait.tq_size!=0)
             {
                 sched_wakeup_on(&p->p_pproc->p_wait);
-                
+                dbg(DBG_CORE,"Parent wakeup\n");
             }
             if(!list_empty(&p->p_children))
             {
@@ -266,6 +271,7 @@ proc_kill(proc_t *p, int status)
                     list_insert_tail(&proc_initproc->p_children,&child->p_child_link);
                 } list_iterate_end();
             }
+            dbg(DBG_CORE,"Child added to initil\n");
             
             p->p_state=PROC_DEAD;
             p->p_status=status;
@@ -290,8 +296,13 @@ proc_kill_all()
     /*pagedir 回收?*/
     dbg(DBG_CORE,"Enter proc_kill_all\n");
     proc_t *link;
-    list_iterate_begin(&_proc_list, link, proc_t, p_child_link) 
-    {      
+    char buffer[1024];
+    proc_list_info(NULL, buffer, 1024);
+    dbg_print("%s", buffer);
+    list_iterate_begin(&_proc_list, link, proc_t, p_list_link) 
+    {
+        proc_info(link, buffer, 1024);
+        dbg_print("%s", buffer);
         if((link->p_pproc->p_pid!=PID_IDLE)&&(link->p_pid!=PID_IDLE))
         {
             proc_kill(link,0);

@@ -350,7 +350,7 @@ proc_thread_exited(void *retval)
 {
     dbg(DBG_CORE,"Enter proc_thread_exited\n");
     /* ---------------------heguang-------------------- */
-    proc_cleanup(*((int*)retval));
+    proc_cleanup(0);
     /* ---------------------heguang-------------------- */
     NOT_YET_IMPLEMENTED("PROCS: proc_thread_exited");
 

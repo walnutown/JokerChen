@@ -168,6 +168,8 @@ sched_wakeup_on(ktqueue_t *q)
     if(!sched_queue_empty(q))
     {
         waked=ktqueue_dequeue(q);
+
+        KASSERT((waked->kt_state == KT_SLEEP) || (waked->kt_state == KT_SLEEP_CANCELLABLE));
         sched_make_runnable(waked);
 
     }       
@@ -305,6 +307,8 @@ sched_switch(void)
 void
 sched_make_runnable(kthread_t *thr)
 {
+        KASSERT(&kt_runq != thr->kt_wchan); /* make sure thread is not blocked*/
+
         dbg(DBG_CORE,"Enter sched_make_runnable()\n");
         /* ---------------------heguang-------------------- */
         uint8_t curr_ipl=intr_getipl();

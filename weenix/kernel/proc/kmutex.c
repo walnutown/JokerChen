@@ -41,6 +41,7 @@ kmutex_init(kmutex_t *mtx)
 void
 kmutex_lock(kmutex_t *mtx)
 {
+    KASSERT(curthr && (curthr != mtx->km_holder));
     dbg(DBG_CORE,"Enter kmutex_lock()\n");
 	/* ---------------------heguang-------------------- */
 	if(mtx->km_holder!=NULL)
@@ -60,6 +61,7 @@ kmutex_lock(kmutex_t *mtx)
 int
 kmutex_lock_cancellable(kmutex_t *mtx)
 {
+    KASSERT(curthr && (curthr != mtx->km_holder));
     dbg(DBG_CORE,"Enter kmutex_lock_cancellable()\n");
     /* ---------------------heguang-------------------- */
     if(mtx->km_holder!=NULL)
@@ -99,6 +101,8 @@ kmutex_lock_cancellable(kmutex_t *mtx)
 void
 kmutex_unlock(kmutex_t *mtx)
 {
+    KASSERT(curthr && (curthr == mtx->km_holder));
+    KASSERT(curthr != mtx->km_holder);
     dbg(DBG_CORE,"Enter kmutex_unlock()\n");
     /* ---------------------heguang-------------------- */
     if(mtx->km_waitq.tq_size==0)

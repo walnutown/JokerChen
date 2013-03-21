@@ -370,6 +370,7 @@ do_waitpid(pid_t pid, int options, int *status)
                     return child->p_pid;
                 }
             }list_iterate_end();
+            sched_sleep_on(&curproc->p_wait);
         }while(1);
     }
     else 
@@ -378,24 +379,29 @@ do_waitpid(pid_t pid, int options, int *status)
         {
             if(child->p_pid==pid)
             {
-                while(1)
+                do
                 {
                     if(child->p_state==PROC_DEAD)
-                        break;
-                }
-                *status=child->p_status;
-                kthread_t *thread;
-                list_iterate_begin(&child->p_threads,thread,kthread_t,kt_plink)
-                {
-                    if(thread->kt_state!=KT_EXITED)
                     {
-                        kthread_destroy(thread);
-                    }                           
-                }list_iterate_end();
-                list_remove(&child->p_child_link);
-                pt_destroy_pagedir(child->p_pagedir);
-                slab_obj_free(proc_allocator, child);
-                return child->p_pid;
+                        *status=child->p_status;
+                        kthread_t *thread;
+                        list_iterate_begin(&child->p_threads,thread,kthread_t,kt_plink)
+                        {
+                            if(thread->kt_state!=KT_EXITED)
+                            {
+                                kthread_destroy(thread);
+                            }                           
+                        }list_iterate_end();
+                        list_remove(&child->p_child_link);
+                        pt_destroy_pagedir(child->p_pagedir);
+                        slab_obj_free(proc_allocator, child);
+                        return child->p_pid;
+                    }
+                    else
+                    {
+                        sched_sleep_on(&curproc->p_wait);
+                    }
+                }while(1);
             }    
         }list_iterate_end();
         return -ECHILD;

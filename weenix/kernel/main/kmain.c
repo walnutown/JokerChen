@@ -169,7 +169,7 @@ process has been created successfully */
         NOT_YET_IMPLEMENTED("PROCS: bootstrap");
          /* ---------------------heguang-------------------- */
 
-        panic("weenix returned to bootstrap()!!! BAD!!!\n");
+       panic("weenix returned to bootstrap()!!! BAD!!!\n");
         return NULL;
 }
 

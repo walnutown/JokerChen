@@ -158,6 +158,7 @@ proc_create(char *name)
  *
  * @param status the status to exit the process with
  */
+ /*+child remove+*/
 void
 proc_cleanup(int status)
 {
@@ -165,6 +166,8 @@ proc_cleanup(int status)
     /*init process 情况怎么处理?*/
     KASSERT(curproc->p_pid!=PID_IDLE&&curproc->p_pid!=PID_INIT);
 
+    if(curproc->p_state!=PROC_DEAD)
+    {
     if(curproc->p_pid!=PID_IDLE&&curproc->p_pid!=PID_INIT)
     {
         /*wake up the waiting parent*/
@@ -172,7 +175,7 @@ proc_cleanup(int status)
         {
             sched_wakeup_on(&curproc->p_pproc->p_wait);
             /*remove child link?*/
-            list_remove(&curproc->p_child_link);
+            /*list_remove(&curproc->p_child_link);*/
         }
 
         /*assign children to new parent*/
@@ -187,12 +190,6 @@ proc_cleanup(int status)
             list_iterate_end();
         }
 
-        /*remove children*/
-        while(!list_empty(&curproc->p_children))
-        {
-            list_remove_tail(&curproc->p_children);
-        }
-
         curproc->p_state=PROC_DEAD;
         curproc->p_status=status;
         /*remove list link?*/
@@ -200,6 +197,7 @@ proc_cleanup(int status)
         /*contex switch*/
         sched_switch();
     }
+}
     /* ---------------------heguang-------------------- */
     NOT_YET_IMPLEMENTED("PROCS: proc_cleanup");
 }
@@ -212,21 +210,31 @@ proc_cleanup(int status)
  *
  * In Weenix, this is only called from proc_kill_all.
  */
+ /*thread cancel proc clean*/
 void
 proc_kill(proc_t *p, int status)
 {
     /* ---------------------heguang-------------------- */
         if(curproc==p)
         {
-            do_exit(status);
+            do_exit(status);/*cancel thread proc clean non destroy*/
         }
         else
         {
-            /*clean up process*/
+            /*clean up process cancel thread clean proc*/
+            kthread_t * thread; 
+            list_iterate_begin(&p->p_threads,thread,kthread_t,kt_plink)
+            {
+                if(thread->kt_state!=KT_EXITED)
+                {
+                    kthread_cancel(thread,0);
+                }
+            }list_iterate_end();
+
             if(p->p_pproc->p_wait.tq_size!=0)
             {
-                sched_wakeup_on(&curproc->p_pproc->p_wait);
-                list_remove(&curproc->p_child_link);
+                sched_wakeup_on(&p->p_pproc->p_wait);
+                /*list_remove(&curproc->p_child_link);*/
             }
             if(!list_empty(&p->p_children))
             {
@@ -237,13 +245,10 @@ proc_kill(proc_t *p, int status)
                     list_insert_tail(&proc_initproc->p_children,&child->p_child_link);
                 } list_iterate_end();
             }
-            while(!list_empty(&p->p_children))
-            {
-                list_remove_tail(&p->p_children);
-            }
+            
             p->p_state=PROC_DEAD;
             p->p_status=status;
-            list_remove(&p->p_list_link);
+            /*list_remove(&p->p_list_link);*/
         }
     /* ---------------------heguang-------------------- */
         NOT_YET_IMPLEMENTED("PROCS: proc_kill");
@@ -265,15 +270,13 @@ proc_kill_all()
     {      
         if((link->p_pproc->p_pid!=PID_IDLE)&&(link->p_pid!=PID_IDLE))
         {
+            proc_kill(link,0);
             kthread_t *thread;
             list_iterate_begin(&link->p_threads,thread,kthread_t,kt_plink)
             {
-                if(thread->kt_state!=KT_EXITED)
-                {
-                    kthread_destroy(thread);
-                }
+                kthread_destroy(thread);
             }list_iterate_end();
-            proc_kill(link,0);
+            pt_destroy_pagedir(link->p_pagedir);
         }
     }list_iterate_end();
     /* ---------------------heguang-------------------- */
@@ -310,7 +313,7 @@ void
 proc_thread_exited(void *retval)
 {
     /* ---------------------heguang-------------------- */
-    proc_cleanup(0);
+    proc_cleanup(*((int*)retval));
     /* ---------------------heguang-------------------- */
     NOT_YET_IMPLEMENTED("PROCS: proc_thread_exited");
 }
@@ -330,6 +333,8 @@ proc_thread_exited(void *retval)
  * Pids other than -1 and positive numbers are not supported.
  * Options other than 0 are not supported.
  */
+
+ /*++sleep on ? check IDLE INIT++*/
 pid_t
 do_waitpid(pid_t pid, int options, int *status)
 {
@@ -355,6 +360,7 @@ do_waitpid(pid_t pid, int options, int *status)
                             kthread_destroy(thread);
                         }                           
                     }list_iterate_end();
+                    pt_destroy_pagedir(child->p_pagedir);
                     return child->p_pid;
                 }
             }list_iterate_end();
@@ -394,12 +400,16 @@ do_waitpid(pid_t pid, int options, int *status)
  *
  * @param status the exit status of the process
  */
+ /*thread cancel proc clean*/
 void
 do_exit(int status)
 {
     /* ---------------------heguang-------------------- */
     kthread_t *thread;
     curproc->p_status=status;
+    kthread_exit(NULL);
+    /*kthread_exit proc_cleanup */
+    /*
     list_iterate_begin(&curproc->p_threads,thread,kthread_t,kt_plink)
     {
         if(thread->kt_state!=KT_EXITED)
@@ -408,6 +418,7 @@ do_exit(int status)
         }
     }list_iterate_end();
     proc_cleanup(0);
+    */
     /* ---------------------heguang-------------------- */
         NOT_YET_IMPLEMENTED("PROCS: do_exit");
 }

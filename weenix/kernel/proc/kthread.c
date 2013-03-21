@@ -130,6 +130,8 @@ kthread_destroy(kthread_t *t)
  *
  * If the thread's sleep is not cancellable, we do nothing else here.
  */
+
+ /*delete link*/
 void
 kthread_cancel(kthread_t *kthr, void *retval)
 {
@@ -138,10 +140,8 @@ kthread_cancel(kthread_t *kthr, void *retval)
                 kthread_exit(retval);
         }
         else {
-                if(kthr -> kt_state != KT_SLEEP) {
-                        kthr -> kt_retval = retval;
-                        sched_cancel(kthr);
-                }
+                kthr -> kt_retval = retval;
+                sched_cancel(kthr);
         }
         /* Yu Sun Code Finish */
         /*NOT_YET_IMPLEMENTED("PROCS: kthread_cancel");*/

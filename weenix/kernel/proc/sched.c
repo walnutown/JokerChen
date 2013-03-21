@@ -143,7 +143,7 @@ sched_cancellable_sleep_on(ktqueue_t *q)
         curthr->kt_state=KT_SLEEP_CANCELLABLE;
         ktqueue_enqueue(q,curthr);
         sched_switch();
-<<<<<<< HEAD
+
         /* Yu Sun Edit Start */
         if(curthr -> kt_cancelled == 1) {
                 return -EINTR;
@@ -153,16 +153,6 @@ sched_cancellable_sleep_on(ktqueue_t *q)
         }
 
         panic("Return in sched_cancellable_sleep_on()!!!\n");
-        /*NOT_YET_IMPLEMENTED("PROCS: sched_cancellable_sleep_on");*/
-        /* return 0; */
-        /* Yu Sun Edit Finish */
-=======
-        if(curthr->kt_cancelled)
-        {
-                return -EINTR;
-        }
-        return 0;
->>>>>>> sched.c
     /* ---------------------heguang-------------------- */
         NOT_YET_IMPLEMENTED("PROCS: sched_cancellable_sleep_on");
 }

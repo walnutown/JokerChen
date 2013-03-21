@@ -297,6 +297,7 @@ proc_kill_all()
                 kthread_destroy(thread);
             }list_iterate_end();
             list_remove(&link->p_list_link);
+            
             dbg(DBG_CORE,"Begin pt_destory\n");
             pt_destroy_pagedir(link->p_pagedir);
             dbg(DBG_CORE,"Finish pt_destory\n");

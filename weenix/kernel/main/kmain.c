@@ -74,7 +74,7 @@ static context_t bootstrap_context;
 #define KILL_ALL_WITHOUT_DEADLOCK   5
 #define KILL_ALL_WITH_DEADLOCK      6
 
-static int CURRENT_TEST = KSHELL_TEST;
+static int CURRENT_TEST = NORMAL_TEST;
 
 /**
  * This is the first real C function ever called. It performs a lot off
@@ -326,6 +326,7 @@ initproc_run(int arg1, void *arg2)
             break;
         case DEADLOCK_TEST2:
             deadlock_run();
+            break;
         case KSHELL_TEST:
             kshell_test();
             break;

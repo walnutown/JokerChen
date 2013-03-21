@@ -303,6 +303,7 @@ proc_kill_all()
     {
         proc_info(link, buffer, 1024);
         dbg_print("%s", buffer);
+        if(link->p_pproc != NULL)
         if((link->p_pproc->p_pid!=PID_IDLE)&&(link->p_pid!=PID_IDLE))
         {
             proc_kill(link,0);
@@ -320,6 +321,8 @@ proc_kill_all()
             slab_obj_free(proc_allocator, link);
         }
     }list_iterate_end();
+    proc_list_info(NULL, buffer, 1024);
+    dbg_print("%s", buffer);
     /* ---------------------heguang-------------------- */
     NOT_YET_IMPLEMENTED("PROCS: proc_kill_all");
     dbg(DBG_CORE,"Leave proc_kill_all\n");

@@ -103,6 +103,9 @@ proc_create(char *name)
 {
         dbg(DBG_CORE,"Enter _proc_create()\n");
         NOT_YET_IMPLEMENTED("PROCS: proc_create");
+
+        KASSERT(PID_IDLE != pid || list_empty(&_proc_list)); /* pid can only
+be PID_IDLE if this is the first process */
     /* ---------------------heguang-------------------- */
         proc_t* process=(proc_t*)slab_obj_alloc(proc_allocator);
         memset(process,0,sizeof(proc_t));
@@ -173,6 +176,9 @@ proc_cleanup(int status)
     /* ---------------------heguang-------------------- */
     /*init process 情况怎么处理?*/
     dbg(DBG_CORE,"Enter proc_cleanup()\n");
+    KASSERT(NULL != proc_initproc); /* should have an "init" process */
+    KASSERT(1 <= curproc->p_pid); /* this process should not be idle process */
+
     KASSERT(curproc->p_pid!=PID_IDLE&&curproc->p_pid!=PID_INIT);
 
     if(curproc->p_state!=PROC_DEAD)
@@ -334,10 +340,13 @@ proc_list()
 void
 proc_thread_exited(void *retval)
 {
+    dbg(DBG_CORE,"Enter proc_thread_exited\n");
     /* ---------------------heguang-------------------- */
     proc_cleanup(*((int*)retval));
     /* ---------------------heguang-------------------- */
     NOT_YET_IMPLEMENTED("PROCS: proc_thread_exited");
+
+    dbg(DBG_CORE,"Enter proc_thread_exited\n");
 }
 
 /* If pid is -1 dispose of one of the exited children of the current

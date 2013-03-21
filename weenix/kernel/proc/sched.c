@@ -119,10 +119,10 @@ sched_sleep_on(ktqueue_t *q)
         curthr->kt_state=KT_SLEEP;
         ktqueue_enqueue(q,curthr);
         sched_switch();
-        while(curthr->kt_state)
+        /*while(curthr->kt_state)
         {
 
-        }
+        }*/
         /* ---------------------heguang-------------------- */
   NOT_YET_IMPLEMENTED("PROCS: sched_sleep_on");
 

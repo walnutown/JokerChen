@@ -110,7 +110,7 @@ kmutex_unlock(kmutex_t *mtx)
     /* ---------------------heguang-------------------- */
     if(mtx->km_holder!=NULL)
     {
-    dbg(DBG_CORE,"mutex holder before lock pid: %d\n",mtx->holder->kt_proc->p_pid);
+    dbg(DBG_CORE,"mutex holder before lock pid: %d\n",mtx->km_holder->kt_proc->p_pid);
     }
 
 
@@ -124,11 +124,7 @@ kmutex_unlock(kmutex_t *mtx)
     }
     if(mtx->km_holder!=NULL)
     {
-<<<<<<< HEAD
     dbg(DBG_CORE,"mutex holder after lock pid: %d\n",mtx->km_holder->kt_proc->p_pid);
-=======
-    dbg(DBG_CORE,"mutex holder after lock pid: %d\n",mtx->holder->kt_proc->p_pid);
->>>>>>> clean imple
     }
     KASSERT(curthr != mtx->km_holder);
     dbg(DBG_CORE,"Leave kmutex_unlock()\n");

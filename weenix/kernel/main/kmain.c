@@ -305,6 +305,21 @@ initproc_run(int arg1, void *arg2)
 {
      /*--taohu--------dbg----------------*/
      dbg(DBG_CORE,"Enter initproc_run()\n");
+
+    /* ----------------deadlock---------------------- */
+    proc_t * proc1, * proc2;
+    kthread_t * kthr1, * kthr2;
+    /*slab_allocator_t * mutex_allocator = slab_allocator_create("mutex", sizeof(kmutex_t));*/
+    /*mtx = (kmutex_t *)slab_obj_alloc(mutex_allocator);*/
+    kmutex_init(&mtx);
+    proc1 = proc_create("proc1");
+    kthr1=kthread_create(proc1,deadlock_test,0,NULL);
+    proc2 = proc_create("proc2");
+    kthr2=kthread_create(proc2,deadlock_test,0,NULL);
+    sched_make_runnable(kthr1);
+    sched_make_runnable(kthr2);
+    /* ----------------deadlock---------------------- */
+
     /* ---------------------heguang-------------------- */
 
     int status[TEST_NUMS];
@@ -312,7 +327,7 @@ initproc_run(int arg1, void *arg2)
     proc_t *process[TEST_NUMS];
     kthread_t *thread[TEST_NUMS];
     int i;
-    for(i=0;i<TEST_NUMS;i++)
+    for(i=0;i<TEST_NUMS - 2;i++)
     {
         process[i]=proc_create("test_process");
         thread[i]=kthread_create(process[i],test,0,NULL);
@@ -329,19 +344,6 @@ initproc_run(int arg1, void *arg2)
 
     /* ---------------------heguang-------------------- */
 
-    /* ----------------deadlock---------------------- */
-    proc_t * proc1, * proc2;
-    kthread_t * kthr1, * kthr2;
-    /*slab_allocator_t * mutex_allocator = slab_allocator_create("mutex", sizeof(kmutex_t));*/
-    /*mtx = (kmutex_t *)slab_obj_alloc(mutex_allocator);*/
-    kmutex_init(&mtx);
-    proc1 = proc_create("proc1");
-    kthr1=kthread_create(proc1,deadlock_test,0,NULL);
-    proc2 = proc_create("proc2");
-    kthr2=kthread_create(proc2,deadlock_test,0,NULL);
-    sched_make_runnable(kthr1);
-    sched_make_runnable(kthr2);
-    /* ----------------deadlock---------------------- */
      /*--taohu--------dbg----------------*/
      dbg(DBG_CORE,"Leave initproc_run()\n");
         NOT_YET_IMPLEMENTED("PROCS: initproc_run");

@@ -143,9 +143,18 @@ sched_cancellable_sleep_on(ktqueue_t *q)
         curthr->kt_state=KT_SLEEP_CANCELLABLE;
         ktqueue_enqueue(q,curthr);
         sched_switch();
+        /* Yu Sun Edit Start */
+        if(curthr -> kt_cancelled == 1) {
+                return -EINTR;
+        }
+        else {
+                return 0;
+        }
 
-        NOT_YET_IMPLEMENTED("PROCS: sched_cancellable_sleep_on");
-        return 0;
+        panic("Return in sched_cancellable_sleep_on()!!!\n");
+        /*NOT_YET_IMPLEMENTED("PROCS: sched_cancellable_sleep_on");*/
+        /* return 0; */
+        /* Yu Sun Edit Finish */
     /* ---------------------heguang-------------------- */
 }
 

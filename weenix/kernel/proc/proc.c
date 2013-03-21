@@ -104,13 +104,16 @@ proc_create(char *name)
         dbg(DBG_CORE,"Enter _proc_create()\n");
         NOT_YET_IMPLEMENTED("PROCS: proc_create");
 
+        pid_t pid = _proc_getid();
         KASSERT(PID_IDLE != pid || list_empty(&_proc_list)); /* pid can only
 be PID_IDLE if this is the first process */
+        KASSERT(PID_INIT != pid || PID_IDLE == curproc->p_pid); /* pid can
+only be PID_INIT when creating from idle process */
     /* ---------------------heguang-------------------- */
         proc_t* process=(proc_t*)slab_obj_alloc(proc_allocator);
         memset(process,0,sizeof(proc_t));
 
-        process->p_pid=_proc_getid();
+        process->p_pid=pid;
         strncpy(process->p_comm,name,PROC_NAME_LEN);
 
         list_init(&process->p_threads);
@@ -178,6 +181,7 @@ proc_cleanup(int status)
     dbg(DBG_CORE,"Enter proc_cleanup()\n");
     KASSERT(NULL != proc_initproc); /* should have an "init" process */
     KASSERT(1 <= curproc->p_pid); /* this process should not be idle process */
+    KASSERT(NULL != curproc->p_pproc); /* this process should have parent process*/
 
     KASSERT(curproc->p_pid!=PID_IDLE&&curproc->p_pid!=PID_INIT);
 
@@ -288,7 +292,7 @@ proc_kill_all()
     proc_t *link;
     list_iterate_begin(&_proc_list, link, proc_t, p_child_link) 
     {      
-        if((link->p_pproc->p_pid!=PID_IDLE)&&(link->p_pid!=PID_IDLE)&&(link!=curproc))
+        if((link->p_pproc->p_pid!=PID_IDLE)&&(link->p_pid!=PID_IDLE))
         {
             proc_kill(link,0);
             kthread_t *thread;
@@ -297,15 +301,13 @@ proc_kill_all()
                 kthread_destroy(thread);
             }list_iterate_end();
             list_remove(&link->p_list_link);
+<<<<<<< HEAD
             
             dbg(DBG_CORE,"Begin pt_destory\n");
+=======
+>>>>>>> procc
             pt_destroy_pagedir(link->p_pagedir);
-            dbg(DBG_CORE,"Finish pt_destory\n");
-
-            dbg(DBG_CORE,"Begin slab_free\n");
             slab_obj_free(proc_allocator, link);
-            dbg(DBG_CORE,"Finish slab_free\n");
-
         }
     }list_iterate_end();
     /* ---------------------heguang-------------------- */
@@ -378,6 +380,10 @@ do_waitpid(pid_t pid, int options, int *status)
 {
      dbg(DBG_CORE,"Enter do_waitpid\n");
     /* ---------------------heguang-------------------- */
+     
+
+
+
     /*busy wait?*/
     KASSERT((pid==-1||pid>0)&&(options==0));
     if(list_empty(&curproc->p_children))
@@ -401,15 +407,8 @@ do_waitpid(pid_t pid, int options, int *status)
                         }                           
                     }list_iterate_end();
                     list_remove(&child->p_child_link);
-
-                     dbg(DBG_CORE,"Begin pt_destory\n");
                     pt_destroy_pagedir(child->p_pagedir);
-                     dbg(DBG_CORE,"Finish pt_destory\n");
-
-                      dbg(DBG_CORE,"Begin pt_destory\n");
                     slab_obj_free(proc_allocator, child);
-                     dbg(DBG_CORE,"Finish pt_destory\n");
-
                     return child->p_pid;
                 }
             }list_iterate_end();
@@ -436,15 +435,8 @@ do_waitpid(pid_t pid, int options, int *status)
                             }                           
                         }list_iterate_end();
                         list_remove(&child->p_child_link);
-
-                        dbg(DBG_CORE,"Begin pt_destory\n");
                         pt_destroy_pagedir(child->p_pagedir);
-                        dbg(DBG_CORE,"Finish pt_destory\n");
-
-                        dbg(DBG_CORE,"Begin pt_destory\n");
                         slab_obj_free(proc_allocator, child);
-                        dbg(DBG_CORE,"Finish pt_destory\n");
-
                         return child->p_pid;
                     }
                     else

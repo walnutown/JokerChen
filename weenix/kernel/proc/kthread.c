@@ -168,7 +168,7 @@ kthread_cancel(kthread_t *kthr, void *retval)
 void
 kthread_exit(void *retval)
 {
-        dbg(DBG_CORE,"kthread_exit()\n");
+        dbg(DBG_CORE,"Enter kthread_exit()\n");
         /* Yu Sun Code Start */
         /* Set thread return value */
         curthr -> kt_retval = retval;
@@ -178,7 +178,7 @@ kthread_exit(void *retval)
         proc_thread_exited(retval);
         /* Yu Sun Code Finish */
         /*NOT_YET_IMPLEMENTED("PROCS: kthread_exit");*/
-        dbg(DBG_CORE,"kthread_exit()\n");
+        dbg(DBG_CORE,"Leave kthread_exit()\n");
 }
 
 /*

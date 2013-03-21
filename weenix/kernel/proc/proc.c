@@ -183,8 +183,11 @@ proc_cleanup(int status)
     KASSERT(1 <= curproc->p_pid); /* this process should not be idle process */
     KASSERT(NULL != curproc->p_pproc); /* this process should have parent process*/
 
+<<<<<<< HEAD
     KASSERT(curproc->p_pid!=PID_IDLE);
 
+=======
+>>>>>>> proc-assert
     if(curproc->p_state!=PROC_DEAD)
     {
     if(curproc->p_pid!=PID_IDLE)
@@ -379,9 +382,6 @@ do_waitpid(pid_t pid, int options, int *status)
 {
      dbg(DBG_CORE,"Enter do_waitpid\n");
     /* ---------------------heguang-------------------- */
-     
-
-
 
     /*busy wait?*/
     KASSERT((pid==-1||pid>0)&&(options==0));
@@ -394,18 +394,23 @@ do_waitpid(pid_t pid, int options, int *status)
         {
             list_iterate_begin(&curproc->p_children,child,proc_t,p_child_link)
             {
+                KASSERT(NULL != child); /* the process should not be NULL */
                 if(child->p_state==PROC_DEAD)
                 {
+                    KASSERT(-1 == pid || child->p_pid == pid); /* should be able to find the process*/                 
                     *status=child->p_status;
                     kthread_t *thread;
                     list_iterate_begin(&child->p_threads,thread,kthread_t,kt_plink)
                     {
                         if(thread->kt_state!=KT_EXITED)
                         {
+                            KASSERT(KT_EXITED == thread->kt_state);/* thr points to a thread to be destroied */                         
                             kthread_destroy(thread);
                         }                           
                     }list_iterate_end();
                     list_remove(&child->p_child_link);
+
+                    KASSERT(NULL != child->p_pagedir); /* this process should have pagedir */
                     pt_destroy_pagedir(child->p_pagedir);
                     slab_obj_free(proc_allocator, child);
                     return child->p_pid;
@@ -417,9 +422,11 @@ do_waitpid(pid_t pid, int options, int *status)
     else 
     {
         list_iterate_begin(&curproc->p_children,child,proc_t,p_child_link)
-        {
+        {            
+            KASSERT(NULL != child); /* the process should not be NULL */ 
             if(child->p_pid==pid)
             {
+                KASSERT(-1 == pid || child->p_pid == pid); /* should be able to find the process */
                 do
                 {
                     if(child->p_state==PROC_DEAD)
@@ -430,10 +437,12 @@ do_waitpid(pid_t pid, int options, int *status)
                         {
                             if(thread->kt_state!=KT_EXITED)
                             {
+                                KASSERT(KT_EXITED == thread->kt_state);/* thr points to a thread to be destroied */ 
                                 kthread_destroy(thread);
                             }                           
                         }list_iterate_end();
                         list_remove(&child->p_child_link);
+                        KASSERT(NULL != child->p_pagedir); /* this process should have pagedir */
                         pt_destroy_pagedir(child->p_pagedir);
                         slab_obj_free(proc_allocator, child);
                         return child->p_pid;

@@ -23,11 +23,13 @@ void kmutex_lock_cancellable(kmutex_t *mtx); void kmutex_unlock(kmutex_t *mtx);
 void
 kmutex_init(kmutex_t *mtx)
 {
+    dbg(DBG_CORE,"Enter kmutex_init()\n");
 	/* ---------------------heguang-------------------- */
 	sched_queue_init(&mtx->km_waitq);
 	mtx->km_holder=NULL;
 	/* ---------------------heguang-------------------- */
     NOT_YET_IMPLEMENTED("PROCS: kmutex_init");
+    dbg(DBG_CORE,"Leave kmutex_init()\n");
 }
 
 /*
@@ -37,8 +39,9 @@ kmutex_init(kmutex_t *mtx)
  * No thread should ever try to lock a mutex it already has locked.
  */
 void
-kmutex_lock(kmutex_t *mtx)
+kmutex_init(kmutex_t *mtx)
 {
+    dbg(DBG_CORE,"Enter kmutex_init()\n");
 	/* ---------------------heguang-------------------- */
 	if(mtx->km_holder!=NULL)
 	{
@@ -47,6 +50,7 @@ kmutex_lock(kmutex_t *mtx)
 	mtx->km_holder=curthr;
 	/* ---------------------heguang-------------------- */
 	NOT_YET_IMPLEMENTED("PROCS: kmutex_lock");
+    dbg(DBG_CORE,"Leave kmutex_init()\n");
 }
 
 /*
@@ -56,6 +60,7 @@ kmutex_lock(kmutex_t *mtx)
 int
 kmutex_lock_cancellable(kmutex_t *mtx)
 {
+    dbg(DBG_CORE,"Enter kmutex_lock_cancellable()\n");
     /* ---------------------heguang-------------------- */
     if(mtx->km_holder!=NULL)
     {
@@ -64,11 +69,13 @@ kmutex_lock_cancellable(kmutex_t *mtx)
     	{
     		mtx->km_holder=curthr;
     	}
+        dbg(DBG_CORE,"Leave kmutex_lock_cancellable()\n");
     	return val;
     }
     else
     {
     	mtx->km_holder=curthr;
+        dbg(DBG_CORE,"Leave kmutex_lock_cancellable()\n");
     	return 0;
     }
     /* ---------------------heguang-------------------- */
@@ -92,6 +99,7 @@ kmutex_lock_cancellable(kmutex_t *mtx)
 void
 kmutex_unlock(kmutex_t *mtx)
 {
+    dbg(DBG_CORE,"Enter kmutex_unlock()\n");
     /* ---------------------heguang-------------------- */
     if(mtx->km_waitq.tq_size==0)
     {
@@ -101,6 +109,7 @@ kmutex_unlock(kmutex_t *mtx)
     {
     	mtx->km_holder=sched_wakeup_on(&mtx->km_waitq);
     }
+    dbg(DBG_CORE,"Leave kmutex_unlock()\n");
     /* ---------------------heguang-------------------- */
     NOT_YET_IMPLEMENTED("PROCS: kmutex_unlock");
 

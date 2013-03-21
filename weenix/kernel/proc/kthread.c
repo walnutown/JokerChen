@@ -74,6 +74,7 @@ free_stack(char *stack)
 kthread_t *
 kthread_create(struct proc *p, kthread_func_t func, long arg1, void *arg2)
 {
+        dbg(DBG_CORE,"Enter kthread_create()\n");
         /* Yu Sun Code Start */
         /* Alloc the thread form slab chunk */
         kthread_t * current_thread = (kthread_t *)slab_obj_alloc(kthread_allocator);
@@ -107,18 +108,21 @@ kthread_create(struct proc *p, kthread_func_t func, long arg1, void *arg2)
         panic("Return in kthread_create()!!!\n");
         /* Yu Sun Code Finish */
         /*NOT_YET_IMPLEMENTED("PROCS: kthread_create");*/
+        dbg(DBG_CORE,"Leave kthread_create()\n");
         return NULL;
 }
 
 void
 kthread_destroy(kthread_t *t)
 {
+        dbg(DBG_CORE,"Enter kthread_destroy()\n");
         KASSERT(t && t->kt_kstack);
         free_stack(t->kt_kstack);
         if (list_link_is_linked(&t->kt_plink))
                 list_remove(&t->kt_plink);
 
         slab_obj_free(kthread_allocator, t);
+        dbg(DBG_CORE,"Leave kthread_destroy()\n");
 }
 
 /*
@@ -137,6 +141,7 @@ kthread_destroy(kthread_t *t)
 void
 kthread_cancel(kthread_t *kthr, void *retval)
 {
+        dbg(DBG_CORE,"Enter kthread_cancel()\n");
         /* Yu Sun Code Start */
         if(kthr == curthr) {/* KT_EXITED clean proc*/
                 kthread_exit(retval);
@@ -147,6 +152,7 @@ kthread_cancel(kthread_t *kthr, void *retval)
         }
         /* Yu Sun Code Finish */
         /*NOT_YET_IMPLEMENTED("PROCS: kthread_cancel");*/
+        dbg(DBG_CORE,"Leave kthread_cancel()\n");
 }
 
 /*
@@ -162,6 +168,7 @@ kthread_cancel(kthread_t *kthr, void *retval)
 void
 kthread_exit(void *retval)
 {
+        dbg(DBG_CORE,"kthread_exit()\n");
         /* Yu Sun Code Start */
         /* Set thread return value */
         curthr -> kt_retval = retval;
@@ -171,6 +178,7 @@ kthread_exit(void *retval)
         proc_thread_exited(retval);
         /* Yu Sun Code Finish */
         /*NOT_YET_IMPLEMENTED("PROCS: kthread_exit");*/
+        dbg(DBG_CORE,"kthread_exit()\n");
 }
 
 /*

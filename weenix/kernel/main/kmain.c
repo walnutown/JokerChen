@@ -70,10 +70,11 @@ static context_t bootstrap_context;
 #define DEADLOCK_TEST               1
 #define PRODUCER_CONSMUER_TEST      2
 #define DEADLOCK_TEST2              3
-#define KILL_ALL_WITHOUT_DEADLOCK   4
-#define KILL_ALL_WITH_DEADLOCK      5
+#define KSHELL_TEST                 4
+#define KILL_ALL_WITHOUT_DEADLOCK   5
+#define KILL_ALL_WITH_DEADLOCK      6
 
-static int CURRENT_TEST = DEADLOCK_TEST;
+static int CURRENT_TEST = KSHELL_TEST;
 
 /**
  * This is the first real C function ever called. It performs a lot off
@@ -294,6 +295,8 @@ static void       normal_test();
 static void       deadlock_test();
 static void       producer_consmuser_test();
 static void       deadlock_run();
+static void       kshell_test();
+static void      *kshell_run(int arg1, void *arg2);
 kmutex_t          mtx, pc_mutex;
 kmutex_t          dead_mtx1,dead_mtx2;
 static void      *deadlock1_run(int arg1, void *arg2);
@@ -323,6 +326,8 @@ initproc_run(int arg1, void *arg2)
             break;
         case DEADLOCK_TEST2:
             deadlock_run();
+        case KSHELL_TEST:
+            kshell_test();
             break;
      }
 
@@ -336,6 +341,28 @@ initproc_run(int arg1, void *arg2)
 
      /*--taohu--------dbg----------------*/
      dbg(DBG_CORE,"Leave initproc_run()\n");
+    return NULL;
+}
+
+static void
+kshell_test() {
+    proc_t* pkshell = proc_create("kshell_test");
+    kthread_t *tkshell = kthread_create(pkshell,kshell_run, 0, NULL);
+    sched_make_runnable(tkshell);
+}
+
+static void *
+kshell_run(int arg1, void *arg2) {
+    dbg_print("Enter kshell_run\n");
+    kshell_t *ksh=kshell_create(0);
+    KASSERT(ksh && "kshell create failed.");
+    int val=0;
+    int err = 0;
+    while((err=kshell_execute_next(ksh)) > 0);
+
+    KASSERT(err == 0 && "kernel shell falsely exited.\n");
+    kshell_destroy(ksh);
+    dbg_print("Leave kshell_run\n");
     return NULL;
 }
 

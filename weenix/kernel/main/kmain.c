@@ -52,7 +52,6 @@
 #include "fs/stat.h"
 
 #include "test/kshell/kshell.h"
-#define TEST_NUMS 5
 
 GDB_DEFINE_HOOK(boot)
 GDB_DEFINE_HOOK(initialized)
@@ -65,8 +64,13 @@ static void      *initproc_run(int arg1, void *arg2);
 static void       hard_shutdown(void);
 static void      *test(int arg1, void *arg2);
 
-
 static context_t bootstrap_context;
+
+#define NORMAL_TEST                 0
+#define DEADLOCK_TEST               1
+#define PRODUCER_CONSMUER_TEST      2
+
+static int CURRENT_TEST = DEADLOCK_TEST;
 
 /**
  * This is the first real C function ever called. It performs a lot off
@@ -283,8 +287,11 @@ initproc_create(void)
  */
  /* Yu Sun Code Start */
 /* ----------------for test------------------- */
+static void       normal_test();
+static void       deadlock_test();
+static void       producer_consmuser_test();
 kmutex_t          mtx, pc_mutex;
-static void      *deadlock_test(int arg1, void *arg2);
+static void      *deadlock(int arg1, void *arg2);
 int               share_resource;
 static void      *producer(int arg1, void *arg2);
 static void      *consumer(int arg1, void *arg2);
@@ -297,18 +304,33 @@ initproc_run(int arg1, void *arg2)
      /*--taohu--------dbg----------------*/
      dbg(DBG_CORE,"Enter initproc_run()\n");
 
-    /* ----------------deadlock---------------------- */
-    proc_t * proc1, * proc2;
-    kthread_t * kthr1, * kthr2;
-    kmutex_init(&mtx);
-    proc1 = proc_create("proc1");
-    kthr1=kthread_create(proc1,deadlock_test,0,NULL);
-    proc2 = proc_create("proc2");
-    kthr2=kthread_create(proc2,deadlock_test,0,NULL);
-    sched_make_runnable(kthr1);
-    sched_make_runnable(kthr2);
-    /* ----------------deadlock---------------------- */
+     switch(CURRENT_TEST) {
+        case NORMAL_TEST:
+            normal_test();
+            break;
+        case DEADLOCK_TEST:
+            deadlock_test();
+            break;
+        case PRODUCER_CONSMUER_TEST:
+            producer_consmuser_test();
+            break;
+     }
 
+    int status;
+    while(!list_empty(&curproc->p_children))
+    {
+        int cpid = do_waitpid(-1,0,&status);
+        KASSERT(status==0);
+        dbg_print("process %d return.\n",cpid);
+    }
+
+     /*--taohu--------dbg----------------*/
+     dbg(DBG_CORE,"Leave initproc_run()\n");
+    return NULL;
+}
+
+static void
+producer_consmuser_test() {
     /* ----------------producer/consumer---------------------- */
     proc_t * pproducer, * pconsumer;
     kthread_t * kproducer, * kconsumer;
@@ -322,34 +344,33 @@ initproc_run(int arg1, void *arg2)
     sched_make_runnable(kproducer);
     sched_make_runnable(kconsumer);
     /* ----------------producer/consumer---------------------- */
+}
 
-    /* ---------------------heguang-------------------- */
+static void
+deadlock_test() {
+    /* ----------------deadlock---------------------- */
+    proc_t * proc1, * proc2;
+    kthread_t * kthr1, * kthr2;
+    kmutex_init(&mtx);
+    proc1 = proc_create("proc1");
+    kthr1=kthread_create(proc1,deadlock,0,NULL);
+    proc2 = proc_create("proc2");
+    kthr2=kthread_create(proc2,deadlock,0,NULL);
+    sched_make_runnable(kthr1);
+    sched_make_runnable(kthr2);
+    /* ----------------deadlock---------------------- */
+}
 
-    int status[TEST_NUMS];
-    pid_t child[TEST_NUMS];
-    proc_t *process[TEST_NUMS];
-    kthread_t *thread[TEST_NUMS];
+static void
+normal_test() {
+    /* create 10 procs for test */
     int i;
-    for(i=0;i<TEST_NUMS - 4;i++)
+    for(i=0;i<10;i++)
     {
-        process[i]=proc_create("test_process");
-        thread[i]=kthread_create(process[i],test,0,NULL);
-        sched_make_runnable(thread[i]);
+        proc_t *process = proc_create("test_process");
+        kthread_t *thread = kthread_create(process,test,0,NULL);
+        sched_make_runnable(thread);
     }
-    i=0;
-    while(!list_empty(&curproc->p_children))
-    {
-        child[i]=do_waitpid(-1,0,&status[i]);
-        KASSERT(status[i]==0);
-        dbg_print("process %d return.\n",(int)child[i]);
-        i++;
-    }
-
-    /* ---------------------heguang-------------------- */
-
-     /*--taohu--------dbg----------------*/
-     dbg(DBG_CORE,"Leave initproc_run()\n");
-    return NULL;
 }
 
 static void *
@@ -402,10 +423,10 @@ consumer(int arg1, void *arg2) {
 }
 
 static void *
-deadlock_test(int arg1, void *arg2) {
-    dbg_print("deadlock_test function start.\n");
+deadlock(int arg1, void *arg2) {
+    dbg_print("deadlock function start.\n");
     kmutex_lock(&mtx);
-    dbg_print("deadlock_test function return.\n");
+    dbg_print("deadlock function return.\n");
     return NULL;
 }
 

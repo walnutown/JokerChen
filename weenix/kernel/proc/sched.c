@@ -143,6 +143,7 @@ sched_cancellable_sleep_on(ktqueue_t *q)
         curthr->kt_state=KT_SLEEP_CANCELLABLE;
         ktqueue_enqueue(q,curthr);
         sched_switch();
+<<<<<<< HEAD
         /* Yu Sun Edit Start */
         if(curthr -> kt_cancelled == 1) {
                 return -EINTR;
@@ -155,7 +156,15 @@ sched_cancellable_sleep_on(ktqueue_t *q)
         /*NOT_YET_IMPLEMENTED("PROCS: sched_cancellable_sleep_on");*/
         /* return 0; */
         /* Yu Sun Edit Finish */
+=======
+        if(curthr->kt_cancelled)
+        {
+                return -EINTR;
+        }
+        return 0;
+>>>>>>> sched.c
     /* ---------------------heguang-------------------- */
+        NOT_YET_IMPLEMENTED("PROCS: sched_cancellable_sleep_on");
 }
 
 kthread_t *
@@ -253,18 +262,19 @@ sched_switch(void)
         kthread_t *old=curthr;
         kthread_t *new=ktqueue_dequeue(&kt_runq);
        
-       while(new==NULL)
+       while(new==NULL||new.kt_cancelled==1)
        {
-        intr_setipl(curr_ipl);
-        intr_wait();
-        intr_setipl(IPL_HIGH);
-        new=ktqueue_dequeue(&kt_runq);
-       }
-       
-       
-        thr->kt_state=KT_RUN;
-        ktqueue_enqueue(&kt_runq,thr);
+                intr_setipl(curr_ipl);
+                intr_wait();
+                intr_setipl(IPL_HIGH);
+                new=ktqueue_dequeue(&kt_runq);
+        
+        }
+       curthr=new;
+       curproc=curthr->kt_proc;
 
+       context_switch(&old->kt_ctx,&new->kt_ctx);
+       
         intr_setipl(curr_ipl);
 
         /* ---------------------heguang-------------------- */

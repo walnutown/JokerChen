@@ -69,6 +69,9 @@ static context_t bootstrap_context;
 #define NORMAL_TEST                 0
 #define DEADLOCK_TEST               1
 #define PRODUCER_CONSMUER_TEST      2
+#define DEADLOCK_TEST2              3
+#define KILL_ALL_WITHOUT_DEADLOCK   4
+#define KILL_ALL_WITH_DEADLOCK      5
 
 static int CURRENT_TEST = DEADLOCK_TEST;
 
@@ -290,7 +293,11 @@ initproc_create(void)
 static void       normal_test();
 static void       deadlock_test();
 static void       producer_consmuser_test();
+static void       deadlock_run();
 kmutex_t          mtx, pc_mutex;
+kmutex_t          dead_mtx1,dead_mtx2;
+static void      *deadlock1_run(int arg1, void *arg2);
+static void      *deadlock2_run(int arg1, void *arg2);
 static void      *deadlock(int arg1, void *arg2);
 int               share_resource;
 static void      *producer(int arg1, void *arg2);
@@ -314,6 +321,9 @@ initproc_run(int arg1, void *arg2)
         case PRODUCER_CONSMUER_TEST:
             producer_consmuser_test();
             break;
+        case DEADLOCK_TEST2:
+            deadlock_run();
+            break;
      }
 
     int status;
@@ -327,6 +337,51 @@ initproc_run(int arg1, void *arg2)
      /*--taohu--------dbg----------------*/
      dbg(DBG_CORE,"Leave initproc_run()\n");
     return NULL;
+}
+
+static void *
+deadlock1_run(int arg1, void *arg2)
+{
+    kmutex_lock(&dead_mtx1);
+    sched_make_runnable(curthr);
+    sched_switch();
+    
+    kmutex_lock(&dead_mtx2);
+    kmutex_unlock(&dead_mtx2);
+    kmutex_unlock(&dead_mtx1);
+    return NULL;
+}
+
+static void *
+deadlock2_run(int arg1, void *arg2)
+{
+    kmutex_lock(&dead_mtx2);
+    sched_make_runnable(curthr);
+    sched_switch();
+
+    kmutex_lock(&dead_mtx1);
+    kmutex_unlock(&dead_mtx1);
+    kmutex_unlock(&dead_mtx2);
+    return NULL;
+}
+
+static void
+deadlock_run()
+{
+    proc_t *dead1proc,*dead2proc;
+    kthread_t *dead1thr,*dead2thr;
+
+    kmutex_init(&dead_mtx1);
+    kmutex_init(&dead_mtx2);
+
+    dead1proc=proc_create("dead1proc");
+    dead1thr=kthread_create(dead1proc,deadlock1_run,0,NULL);
+    dead2proc=proc_create("dead2proc");
+    dead2thr=kthread_create(dead2proc,deadlock2_run,0,NULL);
+
+    sched_make_runnable(dead1thr);
+    sched_make_runnable(dead2thr);
+
 }
 
 static void

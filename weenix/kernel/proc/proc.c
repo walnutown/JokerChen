@@ -242,8 +242,6 @@ proc_kill(proc_t *p, int status)
                     list_insert_tail(&proc_initproc->p_children,&child->p_child_link);
                 } list_iterate_end();
             }
-            dbg(DBG_CORE,"Child added to initil\n");
-            
             p->p_state=PROC_DEAD;
             p->p_status=status;
             list_remove(&p->p_child_link);
@@ -253,7 +251,6 @@ proc_kill(proc_t *p, int status)
                 kthread_destroy(thread);
             }list_iterate_end();
             list_remove(&p->p_list_link);
-            
             pt_destroy_pagedir(p->p_pagedir);
             dbg(DBG_CORE,"Process %i has been killled by current process.\n", p -> p_pid);
             slab_obj_free(proc_allocator, p);

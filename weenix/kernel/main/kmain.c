@@ -77,7 +77,7 @@ static context_t bootstrap_context;
 #define PROC_KILL_TEST              8
 #define PROC_EXIT_TEST              9
 
-static int CURRENT_TEST = PROC_EXIT_TEST;
+static int CURRENT_TEST = PRODUCER_CONSMUER_TEST;
 
 /**
  * This is the first real C function ever called. It performs a lot off
@@ -626,16 +626,16 @@ static void *
 deadlock1_run(int arg1, void *arg2)
 {
     kmutex_lock(&dead_mtx1);
-    dbg(DBG_CORE,"Proc%d hold the mutex1\n", curthr -> p_pid);
+    dbg(DBG_CORE,"Proc%d hold the mutex1\n", curproc -> p_pid);
     sched_make_runnable(curthr);
     sched_switch();
     
     kmutex_lock(&dead_mtx2);
-    dbg(DBG_CORE,"Proc%d hold the mutex2\n", curthr -> p_pid);
+    dbg(DBG_CORE,"Proc%d hold the mutex2\n", curproc -> p_pid);
     kmutex_unlock(&dead_mtx2);
-    dbg(DBG_CORE,"Proc%d relese the mutex2\n", curthr -> p_pid);
+    dbg(DBG_CORE,"Proc%d relese the mutex2\n", curproc -> p_pid);
     kmutex_unlock(&dead_mtx1);
-    dbg(DBG_CORE,"Proc%d relese the mutex1\n", curthr -> p_pid);
+    dbg(DBG_CORE,"Proc%d relese the mutex1\n", curproc -> p_pid);
     return NULL;
 }
 
@@ -643,16 +643,16 @@ static void *
 deadlock2_run(int arg1, void *arg2)
 {
     kmutex_lock(&dead_mtx2);
-    dbg(DBG_CORE,"Proc%d hold the mutex2\n", curthr -> p_pid);
+    dbg(DBG_CORE,"Proc%d hold the mutex2\n", curproc -> p_pid);
     sched_make_runnable(curthr);
     sched_switch();
 
     kmutex_lock(&dead_mtx1);
-    dbg(DBG_CORE,"Proc%d hold the mutex1\n", curthr -> p_pid);
+    dbg(DBG_CORE,"Proc%d hold the mutex1\n", curproc -> p_pid);
     kmutex_unlock(&dead_mtx1);
-    dbg(DBG_CORE,"Proc%d relese the mutex1\n", curthr -> p_pid);
+    dbg(DBG_CORE,"Proc%d relese the mutex1\n", curproc -> p_pid);
     kmutex_unlock(&dead_mtx2);
-    dbg(DBG_CORE,"Proc%d relese the mutex2\n", curthr -> p_pid);
+    dbg(DBG_CORE,"Proc%d relese the mutex2\n", curproc -> p_pid);
     return NULL;
 }
 

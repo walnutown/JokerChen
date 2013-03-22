@@ -15,7 +15,7 @@ when you assign different mode to it, different test method get executed, the ex
 #define DEADLOCK_NORMAL_TEST        3     /*test mode for deadlock with kmutex_lock, two threads try to lock another mutex without giving out current mutex*/
 #define KSHELL_TEST                 4     /*test mode for kshell, you can type in command like help in kshell*/
 #define READER_WRITER_TEST          5     /*test mode for reader,writer, we have 5 readers and 3 writers try to access the resources*/
-#define KILL_ALL                    6     /*test mode for proc_kill_all()*/
+#define KILL_ALL_TEST               6     /*test mode for proc_kill_all()*/
 #define DEADLOCK_CANCELLABLE_TEST   7     /*test mode for deadlock with kmutex_lock_cancellable, two threads try to lock another mutex without giving out current mutex*/
 #define PROC_KILL_TEST              8     /*test mode for proc_kill, kill process 3 and 4 in current process*/
 #define PROC_EXIT_TEST              9     /*test mode for do_exit, just exit current process*/

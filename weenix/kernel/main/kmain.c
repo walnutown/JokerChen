@@ -71,10 +71,11 @@ static context_t bootstrap_context;
 #define PRODUCER_CONSMUER_TEST      2
 #define DEADLOCK_TEST2              3
 #define KSHELL_TEST                 4
-#define KILL_ALL_WITHOUT_DEADLOCK   5
-#define KILL_ALL_WITH_DEADLOCK      6
+#define READER_WRITER_TEST          5
+#define KILL_ALL_WITHOUT_DEADLOCK   6
+#define KILL_ALL_WITH_DEADLOCK      7
 
-static int CURRENT_TEST = NORMAL_TEST;
+static int CURRENT_TEST = READER_WRITER_TEST;
 
 /**
  * This is the first real C function ever called. It performs a lot off
@@ -306,7 +307,12 @@ int               share_resource;
 static void      *producer(int arg1, void *arg2);
 static void      *consumer(int arg1, void *arg2);
 ktqueue_t         kt_wproq, kt_wconq;
-
+static void       reader_writer_test();
+static void      *reader(int arg1, void *arg2);
+static void      *writer(int arg1, void *arg2);
+kmutex_t          wr_mutex;
+ktqueue_t         kt_readq, kt_writeq;
+int               reading, writing;
 
 static void *
 initproc_run(int arg1, void *arg2)
@@ -329,6 +335,8 @@ initproc_run(int arg1, void *arg2)
             break;
         case KSHELL_TEST:
             kshell_test();
+        case READER_WRITER_TEST:
+            reader_writer_test();
             break;
      }
 
@@ -342,6 +350,94 @@ initproc_run(int arg1, void *arg2)
 
      /*--taohu--------dbg----------------*/
      dbg(DBG_CORE,"Leave initproc_run()\n");
+    return NULL;
+}
+
+static void
+reader_writer_test() {
+    proc_t * preader, * pwriter;
+    kthread_t * kreader, * kwriter;
+    kmutex_init(&wr_mutex);
+    sched_queue_init(&kt_readq);
+    sched_queue_init(&kt_writeq);
+    reading = 0;
+    writing = 0;
+    int i;
+    /*create 3 writer*/
+    for(i = 0; i < 3; i++) {
+        char nwriter[8] = "writer";
+        nwriter[6] = i + 1 + '0';
+        nwriter[7] = '\0';
+        pwriter = proc_create(nwriter);
+        kwriter = kthread_create(pwriter,writer,0,NULL);
+        sched_make_runnable(kwriter);
+    }
+    /*create 5 reader*/
+    for(i = 0; i < 5; i++){
+        char nreader[8] = "reader";
+        nreader[6] = i + 1 + '0';
+        nreader[7] = '\0';
+        preader = proc_create(nreader);
+        kreader = kthread_create(preader,reader,0,NULL);
+        sched_make_runnable(kreader);
+    }
+}
+
+static void *
+reader(int arg1, void *arg2) {
+    /*read the resource 3 times*/
+    int i = 0;
+    while(i < 3) {
+        kmutex_lock(&wr_mutex);
+        if(writing == 0) {
+            reading++;
+            dbg_print("%s read the resourcs\n", curproc -> p_comm);
+            kmutex_unlock(&wr_mutex);
+            reading--;
+            if(reading == 0) {
+                dbg_print("no reader now, wakeup the writer\n");
+                sched_wakeup_on(&kt_writeq);
+            }
+            i++;
+            sched_make_runnable(curthr);
+            sched_switch();
+        }
+        else {
+            dbg_print("%s waiting for the writer, block\n", curproc -> p_comm);
+            kmutex_unlock(&wr_mutex);
+            sched_sleep_on(&kt_readq);
+        }
+    }
+    return NULL;
+}
+
+static void *
+writer(int arg1, void *arg2) {
+    /* write the resource 5 times */
+    int i = 0;
+    while(i < 5) {
+        kmutex_lock(&wr_mutex);
+        /*share_resource == 0 indicate no writer writing and no reader reading*/
+        if(reading == 0 && writing == 0) {
+            writing++;
+            dbg_print("%s write the resourcs\n", curproc -> p_comm);
+            kmutex_unlock(&wr_mutex);
+            writing--;
+            if(reading == 0 && writing == 0) {
+                dbg_print("no reader and writer now, wakeup the writer or reader\n");
+                sched_wakeup_on(&kt_writeq);
+                sched_broadcast_on(&kt_readq);
+            }
+            i++;
+            sched_make_runnable(curthr);
+            sched_switch();
+        }
+        else {
+            dbg_print("%s waiting for the writer or reader, block\n", curproc -> p_comm);
+            kmutex_unlock(&wr_mutex);
+            sched_sleep_on(&kt_writeq);
+        }
+    }
     return NULL;
 }
 

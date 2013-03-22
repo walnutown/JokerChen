@@ -195,7 +195,7 @@ proc_cleanup(int status)
 
         curproc->p_state=PROC_DEAD;
         curproc->p_status=status;
-        dbg(DBG_CORE,"Process %d has been cleanedup.\n",%curproc->p_pid);
+        dbg(DBG_CORE,"Process %d has been cleanedup.\n",curproc->p_pid);
         list_remove(&curproc->p_list_link);
         sched_switch();
     }
@@ -286,7 +286,7 @@ proc_kill_all()
         }
     }list_iterate_end();
     proc_list_info(NULL, buffer, 1024);
-    dbg_print("Process list before kill all :\n %s", buffer);
+    dbg_print("Process list after kill all :\n %s", buffer);
     
 }
 

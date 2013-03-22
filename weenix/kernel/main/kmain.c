@@ -77,7 +77,7 @@ static context_t bootstrap_context;
 #define PROC_KILL_TEST              8
 #define PROC_EXIT_TEST              9
 
-static int CURRENT_TEST = KSHELL_TEST;
+static int CURRENT_TEST = PROC_EXIT_TEST;
 
 /**
  * This is the first real C function ever called. It performs a lot off
@@ -323,6 +323,7 @@ static void       proc_kill_run();
 static void       killall_normal_run();
 static void       proc_exit_run();
 static void      *exit_test(int arg1, void *arg2);
+static void      *normal_test_run(int arg1, void *arg2);
 
 static void *
 initproc_run(int arg1, void *arg2)
@@ -429,6 +430,13 @@ killall_normal_run()
 }
 
 static void *
+normal_test_run(int arg1, void *arg2)
+{
+    dbg_print("normal test function return.\n");
+    return NULL;
+}
+
+static void *
 test(int arg1, void *arg2)
 {
     dbg_print("test busy wait function start.\n");
@@ -441,7 +449,7 @@ static void
 proc_kill_run()
 {
     dbg(DBG_CORE,"Test PROC_KILL_TEST\n");
-    dbg(DBG_CORE,"The proces list at beginning\n");
+    dbg_print("The proces list at beginning\n");
     char buffer[1024];
     proc_list_info(NULL, buffer, 1024);
     dbg_print("%s", buffer);
@@ -452,13 +460,13 @@ proc_kill_run()
     kthread_t* thread2=kthread_create(process2,test,0,NULL);
     sched_make_runnable(thread1);
     sched_make_runnable(thread2);
-    dbg(DBG_CORE,"The proces list after create test process\n");
+    dbg_print("The proces list after create test process\n");
     proc_list_info(NULL, buffer, 1024);
     dbg_print("%s", buffer);
 
     proc_kill(process1,0);
     proc_kill(process2,0);
-    dbg(DBG_CORE,"The proces list after kill test process\n");
+    dbg_print("The proces list after kill test process\n");
     proc_list_info(NULL, buffer, 1024);
     dbg_print("%s", buffer);
     /*proc_kill(curproc,0);*/
@@ -487,11 +495,14 @@ deadlock_cancellable_run()
 static void *
 deadlock3_run(int arg1, void *arg2)
 {
+    dbg_print("Proc%d trying to hold the mutex3\n", curproc -> p_pid);
     kmutex_lock_cancellable(&dead_mtx3);
+    dbg_print("Proc%d holding the mutex3\n", curproc -> p_pid);
     sched_make_runnable(curthr);
     sched_switch();
-
+    dbg_print("Proc%d trying to hold the mutex4\n", curproc -> p_pid);
     kmutex_lock_cancellable(&dead_mtx4);
+    dbg_print("Proc%d holding the mutex4\n", curproc -> p_pid);
     kmutex_unlock(&dead_mtx4);
     kmutex_unlock(&dead_mtx3);
     return NULL;
@@ -500,11 +511,14 @@ deadlock3_run(int arg1, void *arg2)
 static void *
 deadlock4_run(int arg1, void *arg2)
 {
+    dbg_print("Proc%d trying to hold the mutex4\n", curproc -> p_pid);
     kmutex_lock_cancellable(&dead_mtx4);
+    dbg_print("Proc%d holding the mutex4\n", curproc -> p_pid);
     sched_make_runnable(curthr);
     sched_switch();
-
+    dbg_print("Proc%d trying to hold the mutex3\n", curproc -> p_pid);
     kmutex_lock_cancellable(&dead_mtx3);
+    dbg_print("Proc%d holding the mutex3\n", curproc -> p_pid);
     kmutex_unlock(&dead_mtx3);
     kmutex_unlock(&dead_mtx4);
     return NULL;
@@ -637,34 +651,36 @@ kshell_run(int arg1, void *arg2) {
 static void *
 deadlock1_run(int arg1, void *arg2)
 {
+    dbg_print("Proc%d trying to hold the mutex1\n", curproc -> p_pid);
     kmutex_lock(&dead_mtx1);
-    dbg(DBG_CORE,"Proc%d hold the mutex1\n", curproc -> p_pid);
+    dbg_print("Proc%d hold the mutex1\n", curproc -> p_pid);
     sched_make_runnable(curthr);
     sched_switch();
-    
+    dbg_print("Proc%d trying to hold the mutex2\n", curproc -> p_pid);
     kmutex_lock(&dead_mtx2);
-    dbg(DBG_CORE,"Proc%d hold the mutex2\n", curproc -> p_pid);
+    dbg_print("Proc%d hold the mutex2\n", curproc -> p_pid);
     kmutex_unlock(&dead_mtx2);
-    dbg(DBG_CORE,"Proc%d relese the mutex2\n", curproc -> p_pid);
+    dbg_print("Proc%d relese the mutex2\n", curproc -> p_pid);
     kmutex_unlock(&dead_mtx1);
-    dbg(DBG_CORE,"Proc%d relese the mutex1\n", curproc -> p_pid);
+    dbg_print("Proc%d relese the mutex1\n", curproc -> p_pid);
     return NULL;
 }
 
 static void *
 deadlock2_run(int arg1, void *arg2)
 {
+    dbg_print("Proc%d trying to hold the mutex2\n", curproc -> p_pid);
     kmutex_lock(&dead_mtx2);
-    dbg(DBG_CORE,"Proc%d hold the mutex2\n", curproc -> p_pid);
+    dbg_print("Proc%d hold the mutex2\n", curproc -> p_pid);
     sched_make_runnable(curthr);
     sched_switch();
-
+    dbg_print("Proc%d trying to hold the mutex1\n", curproc -> p_pid);
     kmutex_lock(&dead_mtx1);
-    dbg(DBG_CORE,"Proc%d hold the mutex1\n", curproc -> p_pid);
+    dbg_print("Proc%d hold the mutex1\n", curproc -> p_pid);
     kmutex_unlock(&dead_mtx1);
-    dbg(DBG_CORE,"Proc%d relese the mutex1\n", curproc -> p_pid);
+    dbg_print("Proc%d relese the mutex1\n", curproc -> p_pid);
     kmutex_unlock(&dead_mtx2);
-    dbg(DBG_CORE,"Proc%d relese the mutex2\n", curproc -> p_pid);
+    dbg_print("Proc%d relese the mutex2\n", curproc -> p_pid);
     return NULL;
 }
 
@@ -729,7 +745,7 @@ normal_test() {
     for(i=0;i<10;i++)
     {
         proc_t *process = proc_create("test_process");
-        kthread_t *thread = kthread_create(process,test,0,NULL);
+        kthread_t *thread = kthread_create(process,normal_test_run,0,NULL);
         sched_make_runnable(thread);
     }
 }

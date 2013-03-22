@@ -175,7 +175,7 @@ void
 proc_cleanup(int status)
 {
     /* ---------------------heguang-------------------- */
-    /*init process 情况怎么处理?*/
+
     dbg(DBG_CORE,"Enter proc_cleanup()\n");
     KASSERT(NULL != proc_initproc); /* should have an "init" process */
     KASSERT(1 <= curproc->p_pid); /* this process should not be idle process */
@@ -191,8 +191,6 @@ proc_cleanup(int status)
         if(curproc->p_pproc->p_wait.tq_size!=0)
         {
             sched_wakeup_on(&curproc->p_pproc->p_wait);
-            /*remove child link?*/
-            /*list_remove(&curproc->p_child_link);*/
         }
 
         /*assign children to new parent*/
@@ -206,10 +204,9 @@ proc_cleanup(int status)
             } 
             list_iterate_end();
         }
-
         curproc->p_state=PROC_DEAD;
         curproc->p_status=status;
-        /*remove list link?*/
+   
         list_remove(&curproc->p_list_link);
         /*contex switch*/
         sched_switch();
@@ -272,7 +269,6 @@ proc_kill(proc_t *p, int status)
             p->p_state=PROC_DEAD;
             p->p_status=status;
             list_remove(&p->p_child_link);
-            /*list_remove(&p->p_list_link);*/
         }
     /* ---------------------heguang-------------------- */
         dbg(DBG_CORE,"Leave proc_kill\n");
@@ -288,7 +284,6 @@ void
 proc_kill_all()
 {
     /* ---------------------heguang-------------------- */
-    /*pagedir 回收?*/
     dbg(DBG_CORE,"Enter proc_kill_all\n");
     proc_t *link;
     char buffer[1024];
@@ -312,8 +307,7 @@ proc_kill_all()
                 kthread_destroy(thread);
             }list_iterate_end();
             list_remove(&link->p_list_link);
-
-            
+    
             dbg(DBG_CORE,"Begin pt_destory\n");
 
             pt_destroy_pagedir(link->p_pagedir);
@@ -331,13 +325,12 @@ proc_kill_all()
 proc_t *
 proc_lookup(int pid)
 {
-       dbg(DBG_CORE,"Enter proc_lookup\n");
+        dbg(DBG_CORE,"Enter proc_lookup\n");
         proc_t *p;
         list_iterate_begin(&_proc_list, p, proc_t, p_list_link) {
                 if (p->p_pid == pid) {
-
                      dbg(DBG_CORE,"Leave proc_lookup\n");
-                        return p;
+                     return p;
                 }
         } list_iterate_end();
 
@@ -391,8 +384,6 @@ do_waitpid(pid_t pid, int options, int *status)
 {
      dbg(DBG_CORE,"Enter do_waitpid\n");
     /* ---------------------heguang-------------------- */
-
-    /*busy wait?*/
     KASSERT((pid==-1||pid>0)&&(options==0));
     if(list_empty(&curproc->p_children))
         return -ECHILD;
@@ -403,23 +394,27 @@ do_waitpid(pid_t pid, int options, int *status)
         {
             list_iterate_begin(&curproc->p_children,child,proc_t,p_child_link)
             {
-                KASSERT(NULL != child); /* the process should not be NULL */
+                /* the process should not be NULL */
+                KASSERT(NULL != child); 
                 if(child->p_state==PROC_DEAD)
                 {
-                    KASSERT(-1 == pid || child->p_pid == pid); /* should be able to find the process*/                 
+                    /* should be able to find the process*/
+                    KASSERT(-1 == pid || child->p_pid == pid);                  
                     *status=child->p_status;
                     kthread_t *thread;
                     list_iterate_begin(&child->p_threads,thread,kthread_t,kt_plink)
                     {
                         if(thread->kt_state!=KT_EXITED)
                         {
-                            KASSERT(KT_EXITED == thread->kt_state);/* thr points to a thread to be destroied */                         
+                            /* thr points to a thread to be destroied */ 
+                            KASSERT(KT_EXITED == thread->kt_state);                        
                             kthread_destroy(thread);
                         }                           
                     }list_iterate_end();
                     list_remove(&child->p_child_link);
 
-                    KASSERT(NULL != child->p_pagedir); /* this process should have pagedir */
+                    /* this process should have pagedir */
+                    KASSERT(NULL != child->p_pagedir); 
                     pt_destroy_pagedir(child->p_pagedir);
                     slab_obj_free(proc_allocator, child);
                     return child->p_pid;
@@ -432,10 +427,12 @@ do_waitpid(pid_t pid, int options, int *status)
     {
         list_iterate_begin(&curproc->p_children,child,proc_t,p_child_link)
         {            
-            KASSERT(NULL != child); /* the process should not be NULL */ 
+            /* the process should not be NULL */ 
+            KASSERT(NULL != child); 
             if(child->p_pid==pid)
             {
-                KASSERT(-1 == pid || child->p_pid == pid); /* should be able to find the process */
+                /* should be able to find the process */
+                KASSERT(-1 == pid || child->p_pid == pid); 
                 do
                 {
                     if(child->p_state==PROC_DEAD)
@@ -446,12 +443,14 @@ do_waitpid(pid_t pid, int options, int *status)
                         {
                             if(thread->kt_state!=KT_EXITED)
                             {
-                                KASSERT(KT_EXITED == thread->kt_state);/* thr points to a thread to be destroied */ 
+                                /* thr points to a thread to be destroied */ 
+                                KASSERT(KT_EXITED == thread->kt_state);
                                 kthread_destroy(thread);
                             }                           
                         }list_iterate_end();
                         list_remove(&child->p_child_link);
-                        KASSERT(NULL != child->p_pagedir); /* this process should have pagedir */
+                        /* this process should have pagedir */
+                        KASSERT(NULL != child->p_pagedir); 
                         pt_destroy_pagedir(child->p_pagedir);
                         slab_obj_free(proc_allocator, child);
                         return child->p_pid;
@@ -498,7 +497,7 @@ do_exit(int status)
     proc_cleanup(0);
     */
     /* ---------------------heguang-------------------- */
-        dbg(DBG_CORE,"Leave do_exit\n");
+    dbg(DBG_CORE,"Leave do_exit\n");
 }
 
 size_t

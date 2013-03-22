@@ -273,6 +273,8 @@ proc_kill(proc_t *p, int status)
             p->p_status=status;
             list_remove(&p->p_child_link);
             /*list_remove(&p->p_list_link);*/
+<<<<<<< HEAD
+<<<<<<< HEAD
             
             list_iterate_begin(&p->p_threads,thread,kthread_t,kt_plink)
             {
@@ -284,6 +286,11 @@ proc_kill(proc_t *p, int status)
 
             pt_destroy_pagedir(p->p_pagedir);
             slab_obj_free(proc_allocator, p);
+=======
+
+>>>>>>> convert
+=======
+>>>>>>> Revert "convert"
         }
     /* ---------------------heguang-------------------- */
         dbg(DBG_CORE,"Leave proc_kill\n");
@@ -317,6 +324,21 @@ proc_kill_all()
             if(thread->kt_state!=KT_SLEEP)
             {
             proc_kill(link,0);
+<<<<<<< HEAD
+=======
+            
+            list_iterate_begin(&link->p_threads,thread,kthread_t,kt_plink)
+            {
+                kthread_destroy(thread);
+            }list_iterate_end();
+            list_remove(&link->p_list_link);
+
+            
+            dbg(DBG_CORE,"Begin pt_destory\n");
+
+            pt_destroy_pagedir(link->p_pagedir);
+            slab_obj_free(proc_allocator, link);
+>>>>>>> convert
             }
         }
         }

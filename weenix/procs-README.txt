@@ -1,9 +1,9 @@
 This test assignment is evenly splited in our group.
 Split:
 
-Yu Sun(sun812@usc.edu):			      100/3 		thread.c, sched.c     
-Heguang Liu(heguangl@usc.edu):		100/3		  proc.c, kmain.c, mutex.c
-Tao Hu(taohu@usc.edu):			      100/3		  git, gradeline, test, shell,
+Yu Sun(sun812@usc.edu):			        100/3 		thread.c, sched.c     
+Heguang Liu(heguangl@usc.edu):		  100/3		  proc.c, kmain.c, mutex.c
+Tao Hu(taohu@usc.edu):			        100/3		  git, gradeline, test, shell,
 
 Tips to test out kernel:
 There is a global variable static int CURRENT_TEST is kmain.c

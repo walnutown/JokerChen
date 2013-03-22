@@ -23,12 +23,8 @@ void kmutex_lock_cancellable(kmutex_t *mtx); void kmutex_unlock(kmutex_t *mtx);
 void
 kmutex_init(kmutex_t *mtx)
 {
-    dbg(DBG_CORE,"Enter kmutex_init()\n");
-	/* ---------------------heguang-------------------- */
 	sched_queue_init(&mtx->km_waitq);
 	mtx->km_holder=NULL;
-	/* ---------------------heguang-------------------- */
-    dbg(DBG_CORE,"Leave kmutex_init()\n");
 }
 
 /*
@@ -42,15 +38,12 @@ kmutex_lock(kmutex_t *mtx)
 {
     KASSERT(curthr && (curthr != mtx->km_holder));
     dbg(DBG_CORE,"Enter kmutex_lock()\n");
-	/* ---------------------heguang-------------------- */
-    dbg_print("Cuthr thread state: %d, before sleep\n", curthr -> kt_state);
 	if(mtx->km_holder!=NULL)
 	{
 		sched_sleep_on(&mtx->km_waitq);
 	}
-    dbg_print("Cuthr thread state: %d, after sleep\n", curthr -> kt_state);
 	mtx->km_holder=curthr;
-	/* ---------------------heguang-------------------- */
+
     dbg(DBG_CORE,"Leave kmutex_lock()\n");
 }
 
@@ -63,7 +56,6 @@ kmutex_lock_cancellable(kmutex_t *mtx)
 {
     KASSERT(curthr && (curthr != mtx->km_holder));
     dbg(DBG_CORE,"Enter kmutex_lock_cancellable()\n");
-    /* ---------------------heguang-------------------- */
     if(mtx->km_holder!=NULL)
     {
     	int val=sched_cancellable_sleep_on(&mtx->km_waitq);
@@ -80,7 +72,6 @@ kmutex_lock_cancellable(kmutex_t *mtx)
         dbg(DBG_CORE,"Leave kmutex_lock_cancellable()\n");
     	return 0;
     }
-    /* ---------------------heguang-------------------- */
        
 }
 
@@ -105,16 +96,8 @@ kmutex_unlock(kmutex_t *mtx)
     
     if(mtx->km_holder!=NULL)
     {
-    dbg(DBG_CORE,"mutex holder before lock pid: %d\n",mtx->km_holder->kt_proc->p_pid);
+    dbg(DBG_CORE,"mutex holder before lock: Process%d\n",mtx->km_holder->kt_proc->p_pid);
     }
-
-    dbg(DBG_CORE,"Enter kmutex_unlock()\n");
-    /* ---------------------heguang-------------------- */
-    if(mtx->km_holder!=NULL)
-    {
-    dbg(DBG_CORE,"mutex holder before lock pid: %d\n",mtx->km_holder->kt_proc->p_pid);
-    }
-
 
     if(mtx->km_waitq.tq_size==0)
     {
@@ -126,10 +109,8 @@ kmutex_unlock(kmutex_t *mtx)
     }
     if(mtx->km_holder!=NULL)
     {
-    dbg(DBG_CORE,"mutex holder after lock pid: %d\n",mtx->km_holder->kt_proc->p_pid);
+    dbg(DBG_CORE,"mutex holder after lock: Process%d\n",mtx->km_holder->kt_proc->p_pid);
     }
     KASSERT(curthr != mtx->km_holder);
-    dbg(DBG_CORE,"Leave kmutex_unlock()\n");
-    /* ---------------------heguang-------------------- */
 
 }

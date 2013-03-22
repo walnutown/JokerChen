@@ -43,10 +43,12 @@ kmutex_lock(kmutex_t *mtx)
     KASSERT(curthr && (curthr != mtx->km_holder));
     dbg(DBG_CORE,"Enter kmutex_lock()\n");
 	/* ---------------------heguang-------------------- */
+    dbg_print("Cuthr thread state: %d, before sleep\n", curthr -> kt_state);
 	if(mtx->km_holder!=NULL)
 	{
 		sched_sleep_on(&mtx->km_waitq);
 	}
+    dbg_print("Cuthr thread state: %d, after sleep\n", curthr -> kt_state);
 	mtx->km_holder=curthr;
 	/* ---------------------heguang-------------------- */
     dbg(DBG_CORE,"Leave kmutex_lock()\n");

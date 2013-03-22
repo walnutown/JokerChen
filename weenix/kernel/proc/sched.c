@@ -121,7 +121,9 @@ sched_sleep_on(ktqueue_t *q)
         /* ---------------------heguang-------------------- */
         curthr->kt_state=KT_SLEEP;
         ktqueue_enqueue(q,curthr);
+        dbg_print("Cuthr thread state: %d\n", curthr -> kt_state);
         sched_switch();
+        dbg_print("Cuthr thread state: %d\n", curthr -> kt_state);
         /* ---------------------heguang-------------------- */
         dbg(DBG_CORE,"Leave sched_sleep_on()\n");
 

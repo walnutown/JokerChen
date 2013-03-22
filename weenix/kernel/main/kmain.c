@@ -69,13 +69,16 @@ static context_t bootstrap_context;
 #define NORMAL_TEST                 0
 #define DEADLOCK_TEST               1
 #define PRODUCER_CONSMUER_TEST      2
-#define DEADLOCK_TEST2              3
+#define DEADLOCK_NORMAL_TEST        3
 #define KSHELL_TEST                 4
 #define READER_WRITER_TEST          5
 #define KILL_ALL_WITHOUT_DEADLOCK   6
 #define KILL_ALL_WITH_DEADLOCK      7
+#define DEADLOCK_CANCELLABLE_TEST   8
+#define PROC_KILL_TEST              9
+#define PROC_EXIT_TEST              10
 
-static int CURRENT_TEST = READER_WRITER_TEST;
+static int CURRENT_TEST = PROC_EXIT_TEST;
 
 /**
  * This is the first real C function ever called. It performs a lot off
@@ -313,6 +316,15 @@ static void      *writer(int arg1, void *arg2);
 kmutex_t          wr_mutex;
 ktqueue_t         kt_readq, kt_writeq;
 int               reading, writing;
+static void       deadlock_cancellable_run();
+static void      *deadlock3_run(int arg1, void *arg2);
+static void      *deadlock4_run(int arg1, void *arg2);
+kmutex_t          dead_mtx3,dead_mtx4;
+static void       killall_deadlock();
+static void       proc_kill_run();
+static void       killall_normal_run();
+static void       proc_exit_run();
+static void      *exit_test(int arg1, void *arg2);
 
 static void *
 initproc_run(int arg1, void *arg2)
@@ -330,13 +342,29 @@ initproc_run(int arg1, void *arg2)
         case PRODUCER_CONSMUER_TEST:
             producer_consmuser_test();
             break;
-        case DEADLOCK_TEST2:
+        case DEADLOCK_NORMAL_TEST:
             deadlock_run();
             break;
         case KSHELL_TEST:
             kshell_test();
+            break;
         case READER_WRITER_TEST:
             reader_writer_test();
+            break;
+        case DEADLOCK_CANCELLABLE_TEST:
+            deadlock_cancellable_run();
+            break;
+        case KILL_ALL_WITH_DEADLOCK:
+            killall_deadlock();
+            break;
+        case PROC_KILL_TEST:
+            proc_kill_run();
+            break;
+        case KILL_ALL_WITHOUT_DEADLOCK:
+            killall_normal_run();
+            break;
+        case PROC_EXIT_TEST:
+            proc_exit_run();
             break;
      }
 
@@ -350,6 +378,173 @@ initproc_run(int arg1, void *arg2)
 
      /*--taohu--------dbg----------------*/
      dbg(DBG_CORE,"Leave initproc_run()\n");
+    return NULL;
+}
+
+static void 
+proc_exit_run()
+{
+    pid_t child=0;
+    int status=0;
+    proc_t * process=proc_create("test_process");
+    kthread_t* thread=kthread_create(process,exit_test,0,NULL);
+    sched_make_runnable(thread);
+
+    child=do_waitpid(-1,0,&status);
+    KASSERT(status==0);
+    dbg_print("process %d return.\n",(int)child);
+}
+
+static void *
+exit_test(int arg1, void *arg2)
+{
+    do_exit(0);
+    return NULL;
+}
+
+static void
+killall_normal_run()
+{
+    int status[5];
+    pid_t child[5];
+    proc_t *process[5];
+    kthread_t *thread[5];
+
+    int i;
+    for(i=0;i<5;i++)
+    {
+        process[i]=proc_create("test_process");
+        thread[i]=kthread_create(process[i],test,0,NULL);
+        sched_make_runnable(thread[i]);
+    }
+
+    proc_kill_all();
+    i=0;
+    while(!list_empty(&curproc->p_children))
+    {
+        child[i]=do_waitpid(-1,0,&status[i]);
+        KASSERT(status[i]==0);
+        dbg_print("process %d return.\n",(int)child[i]);
+        i++;
+    }
+}
+
+static void *
+test(int arg1, void *arg2)
+{
+    dbg_print("test function start.\n");
+    while(1) {;}
+    dbg_print("test function return.\n");
+    return NULL;
+}
+
+static void
+proc_kill_run()
+{
+    char buffer[1024];
+    proc_list_info(NULL, buffer, 1024);
+    dbg_print("%s", buffer);
+    proc_t * process1=proc_create("test_process");
+    kthread_t* thread1=kthread_create(process1,test,0,NULL);
+
+    proc_t * process2=proc_create("test_process");
+    kthread_t* thread2=kthread_create(process2,test,0,NULL);
+    sched_make_runnable(thread1);
+    sched_make_runnable(thread2);
+
+    proc_list_info(NULL, buffer, 1024);
+    dbg_print("%s", buffer);
+
+    proc_kill(process1,0);
+    proc_kill(process2,0);
+    proc_list_info(NULL, buffer, 1024);
+    dbg_print("%s", buffer);
+    /*proc_kill(curproc,0);*/
+}
+
+static void
+killall_deadlock()
+{
+    proc_t *dead1proc,*dead2proc;
+    kthread_t *dead1thr,*dead2thr;
+
+    int status[7];
+    pid_t child[7];
+    proc_t *process[5];
+    kthread_t *thread[5];
+
+    kmutex_init(&dead_mtx1);
+    kmutex_init(&dead_mtx2);
+
+    dead1proc=proc_create("dead1proc");
+    dead1thr=kthread_create(dead1proc,deadlock1_run,0,NULL);
+    dead2proc=proc_create("dead2proc");
+    dead2thr=kthread_create(dead2proc,deadlock2_run,0,NULL);
+
+    sched_make_runnable(dead1thr);
+    sched_make_runnable(dead2thr);
+
+    int i;
+    for(i=0;i<5;i++)
+    {
+        process[i]=proc_create("test_process");
+        thread[i]=kthread_create(process[i],test,0,NULL);
+        sched_make_runnable(thread[i]);
+    }
+
+    proc_kill_all();
+    i=0;
+
+    while(!list_empty(&curproc->p_children))
+    {
+        child[i]=do_waitpid(-1,0,&status[i]);
+        dbg_print("process %d return.\n",(int)child[i]);
+        i++;
+    }
+}
+
+
+static void
+deadlock_cancellable_run()
+{
+    proc_t *dead3proc,*dead4proc;
+    kthread_t *dead3thr,*dead4thr;
+
+    kmutex_init(&dead_mtx3);
+    kmutex_init(&dead_mtx4);
+
+    dead3proc=proc_create("dead3proc");
+    dead3thr=kthread_create(dead3proc,deadlock3_run,0,NULL);
+    dead4proc=proc_create("dead4proc");
+    dead4thr=kthread_create(dead4proc,deadlock4_run,0,NULL);
+
+    sched_make_runnable(dead3thr);
+    sched_make_runnable(dead4thr);
+}
+
+static void *
+deadlock3_run(int arg1, void *arg2)
+{
+    kmutex_lock_cancellable(&dead_mtx3);
+    sched_make_runnable(curthr);
+    sched_switch();
+
+    kmutex_lock_cancellable(&dead_mtx4);
+    kmutex_unlock(&dead_mtx4);
+    kmutex_unlock(&dead_mtx3);
+    return NULL;
+}
+
+static void *
+deadlock4_run(int arg1, void *arg2)
+{
+    kmutex_lock_cancellable(&dead_mtx4);
+    sched_make_runnable(curthr);
+    sched_switch();
+
+    kmutex_lock_cancellable(&dead_mtx3);
+    kmutex_unlock(&dead_mtx3);
+    kmutex_unlock(&dead_mtx4);
     return NULL;
 }
 
@@ -609,18 +804,6 @@ deadlock(int arg1, void *arg2) {
     return NULL;
 }
 
-static void *
-test(int arg1, void *arg2)
-{
-    /* ---------------------heguang-------------------- */
-    dbg_print("test function start.\n");
-    /*add test code here.*/
-    /*while(1) {
-
-    }*/
-    dbg_print("test function return.\n");
-    return NULL;
-}
  /* Yu Sun Code Finish */
 
 /**

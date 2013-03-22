@@ -77,9 +77,7 @@ kthread_create(struct proc *p, kthread_func_t func, long arg1, void *arg2)
         /* the process should not be NULL */
         KASSERT(NULL != p); 
 
-        dbg(DBG_CORE,"Enter kthread_create()\n");
-        /* Yu Sun Code Start */
-        /* Alloc the thread form slab chunk */
+        
         kthread_t * current_thread = (kthread_t *)slab_obj_alloc(kthread_allocator);
         memset(current_thread,0,sizeof(kthread_t));
 
@@ -109,7 +107,6 @@ kthread_create(struct proc *p, kthread_func_t func, long arg1, void *arg2)
         dbg_print("Thread created successful in process %d", p -> p_pid);
         return current_thread;
         panic("Return in kthread_create()!!!\n");
-        /* Yu Sun Code Finish */
         dbg(DBG_CORE,"Leave kthread_create()\n");
         return NULL;
 }

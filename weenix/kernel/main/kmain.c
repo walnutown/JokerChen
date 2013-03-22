@@ -77,7 +77,7 @@ static context_t bootstrap_context;
 #define PROC_KILL_TEST              8
 #define PROC_EXIT_TEST              9
 
-static int CURRENT_TEST = PRODUCER_CONSMUER_TEST;
+static int CURRENT_TEST = KSHELL_TEST;
 
 /**
  * This is the first real C function ever called. It performs a lot off
@@ -609,7 +609,7 @@ kshell_test() {
 
 static void *
 kshell_run(int arg1, void *arg2) {
-    dbg_print("Enter kshell_run\n");
+    /*dbg_print("Enter kshell_run\n");
     kshell_t *ksh=kshell_create(0);
     KASSERT(ksh && "kshell create failed.");
     int val=0;
@@ -619,6 +619,18 @@ kshell_run(int arg1, void *arg2) {
     KASSERT(err == 0 && "kernel shell falsely exited.\n");
     kshell_destroy(ksh);
     dbg_print("Leave kshell_run\n");
+    return NULL;*/
+
+    kshell_t *new_shell;
+    int i;
+    while (1)
+    {
+        new_shell = kshell_create(0);
+        i = kshell_execute_next(new_shell);
+        if(i>0){dbg(DBG_TERM,"Error Executing the command\n");}
+        kshell_destroy(new_shell);
+        if(i==0){break;}
+    }
     return NULL;
 }
 

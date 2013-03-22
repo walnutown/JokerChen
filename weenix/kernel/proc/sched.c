@@ -95,8 +95,10 @@ ktqueue_remove(ktqueue_t *q, kthread_t *thr)
 void
 sched_queue_init(ktqueue_t *q)
 {
+        dbg(DBG_CORE,"Enter sched_queue_init()\n");
         list_init(&q->tq_list);
         q->tq_size = 0;
+        dbg(DBG_CORE,"Return sched_queue_init()\n");
 }
 
 int
@@ -114,12 +116,16 @@ sched_queue_empty(ktqueue_t *q)
  */
 void
 sched_sleep_on(ktqueue_t *q)
-{       
+{
+        dbg(DBG_CORE,"Enter sched_sleep_on()\n");
+        /* ---------------------heguang-------------------- */
         curthr->kt_state=KT_SLEEP;
         ktqueue_enqueue(q,curthr);
-        dbg_print("Thread begin to sleep.\n");
-       
+        dbg_print("Cuthr thread state: %d\n", curthr -> kt_state);
         sched_switch();
+        dbg_print("Cuthr thread state: %d\n", curthr -> kt_state);
+        /* ---------------------heguang-------------------- */
+        dbg(DBG_CORE,"Leave sched_sleep_on()\n");
 
 }
 
@@ -134,11 +140,14 @@ sched_sleep_on(ktqueue_t *q)
 int
 sched_cancellable_sleep_on(ktqueue_t *q)
 {
+    dbg(DBG_CORE,"Enter sched_cancellable_sleep_on()\n");
+
+    /* ---------------------heguang-------------------- */
         curthr->kt_state=KT_SLEEP_CANCELLABLE;
         ktqueue_enqueue(q,curthr);
-        dbg_print("Thread begin to cancallable sleep.\n");
         sched_switch();
 
+        /* Yu Sun Edit Start */
         if(curthr -> kt_cancelled == 1) {
             dbg(DBG_CORE,"Leave sched_cancellable_sleep_on()\n");
                 return -EINTR;
@@ -149,12 +158,14 @@ sched_cancellable_sleep_on(ktqueue_t *q)
         }
 
         panic("Return in sched_cancellable_sleep_on()!!!\n");
+    /* ---------------------heguang-------------------- */
 }
 
 kthread_t *
 sched_wakeup_on(ktqueue_t *q)
 {
-    
+    dbg(DBG_CORE,"Enter sched_wakeup_on()\n");
+    /* ---------------------heguang-------------------- */
     kthread_t *waked=NULL;
     if(!sched_queue_empty(q))
     {
@@ -162,20 +173,22 @@ sched_wakeup_on(ktqueue_t *q)
 
         KASSERT((waked->kt_state == KT_SLEEP) || (waked->kt_state == KT_SLEEP_CANCELLABLE));
         sched_make_runnable(waked);
-        dbg(DBG_CORE,"Thread has been waking up.\n");
+
     }       
-        
+        dbg(DBG_CORE,"Leave sched_wakeup_on()\n");
         return waked;
 }
 
 void
 sched_broadcast_on(ktqueue_t *q)
 {
-     dbg(DBG_CORE,"Wake up all thread in queue.\n");
+    dbg(DBG_CORE,"Enter sched_broadcast_on()\n");
+
       while(q->tq_size!=0)
       {
         sched_wakeup_on(q);
       } 
+    dbg(DBG_CORE,"Leave sched_broadcast_on()\n");
 }
 
 /*
@@ -190,13 +203,16 @@ sched_broadcast_on(ktqueue_t *q)
 void
 sched_cancel(struct kthread *kthr)
 {
+    dbg(DBG_CORE,"Enter sched_cancel()\n");
+        /* Yu Sun Code Start */
         kthr -> kt_cancelled = 1;
+        /* Remove it from the wait queue, move it to runq */
         if(kthr -> kt_state == KT_SLEEP_CANCELLABLE) {
                 ktqueue_remove(kthr -> kt_wchan, kthr);
                 sched_make_runnable(kthr);
-                dbg(DBG_CORE,"Thread cancelled in waiting queue.\n");
         }
-        
+        dbg(DBG_CORE,"Leave sched_cancel()\n");
+        /* Yu Sun Code Finish */
 }
 
 /*
@@ -238,6 +254,9 @@ sched_cancel(struct kthread *kthr)
 void
 sched_switch(void)
 {
+     dbg(DBG_CORE,"Enter sched_switch()\n");
+
+      /* ---------------------heguang-------------------- */
         uint8_t curr_ipl=intr_getipl();
         intr_setipl(IPL_HIGH);
         kthread_t *old=curthr;
@@ -245,9 +264,6 @@ sched_switch(void)
        
        while(new==NULL)
        {
-                intr_setipl(curr_ipl);
-                intr_wait();
-                intr_setipl(IPL_HIGH);
                 /*
                 if(new.kt_cancelled)
                 {
@@ -257,15 +273,19 @@ sched_switch(void)
                     kthread_exit((void*)curthr->kt_retval);
                 }
                 */
+                dbg(DBG_CORE,"Run queue is empty\n");
+                intr_setipl(IPL_LOW);
+                intr_wait();
+                intr_setipl(IPL_HIGH); 
                 new=ktqueue_dequeue(&kt_runq);
-        
         }
        curthr=new;
        curproc=curthr->kt_proc;
        intr_setipl(curr_ipl);
-       dbg(DBG_CORE,"Switch to next context.\n");
+       dbg(DBG_CORE,"Leave sched_switch()\n");
        context_switch(&old->kt_ctx,&new->kt_ctx);
        
+        /* ---------------------heguang-------------------- */
 }
 
 /*
@@ -286,11 +306,33 @@ sched_make_runnable(kthread_t *thr)
 {
         KASSERT(&kt_runq != thr->kt_wchan); /* make sure thread is not blocked*/
 
+        dbg(DBG_CORE,"Enter sched_make_runnable()\n");
+        /* ---------------------heguang-------------------- */
         uint8_t curr_ipl=intr_getipl();
         intr_setipl(IPL_HIGH);
+
         thr->kt_state=KT_RUN;
         ktqueue_enqueue(&kt_runq,thr);
+
         intr_setipl(curr_ipl);
-        dbg(DBG_CORE,"Current thread has been added into running queue.\n");
+    dbg(DBG_CORE,"Leave sched_make_runnable()\n");
+        /* ---------------------heguang-------------------- */
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 

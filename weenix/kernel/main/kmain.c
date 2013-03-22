@@ -72,7 +72,7 @@ static context_t bootstrap_context;
 #define DEADLOCK_NORMAL_TEST        3
 #define KSHELL_TEST                 4
 #define READER_WRITER_TEST          5
-#define KILL_ALL_WITHOUT_DEADLOCK   6
+#define KILL_ALL_TEST               6
 #define DEADLOCK_CANCELLABLE_TEST   7
 #define PROC_KILL_TEST              8
 #define PROC_EXIT_TEST              9
@@ -356,7 +356,7 @@ initproc_run(int arg1, void *arg2)
         case PROC_KILL_TEST:
             proc_kill_run();
             break;
-        case KILL_ALL_WITHOUT_DEADLOCK:
+        case KILL_ALL_TEST:
             killall_normal_run();
             break;
         case PROC_EXIT_TEST:

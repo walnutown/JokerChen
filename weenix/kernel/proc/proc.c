@@ -66,7 +66,7 @@ static pid_t next_pid = 0;
 static int
 _proc_getid()
 {
-        dbg(DBG_CORE,"Enter _proc_getid()\n");
+       
         proc_t *p;
         pid_t pid = next_pid;
         while (1) {
@@ -74,9 +74,6 @@ failed:
                 list_iterate_begin(&_proc_list, p, proc_t, p_list_link) {
                         if (p->p_pid == pid) {
                                 if ((pid = (pid + 1) % PROC_MAX_COUNT) == next_pid) {
-
-                                        dbg(DBG_CORE,"Leave _proc_getid()\n");
-
                                         return -1;
                                 } else {
                                         goto failed;
@@ -84,8 +81,6 @@ failed:
                         }
                 } list_iterate_end();
                 next_pid = (pid + 1) % PROC_MAX_COUNT;
-
-                dbg(DBG_CORE,"Leave _proc_getid()\n");
                 return pid;
         }
 }
@@ -101,13 +96,10 @@ failed:
 proc_t *
 proc_create(char *name)
 {
-        dbg(DBG_CORE,"Enter _proc_create()\n");
-
         pid_t pid = _proc_getid();
-        dbg(DBG_CORE,"Process get pid %i\n", pid);
+        dbg(DBG_CORE,"Process %i is created.\n", pid);
         KASSERT(PID_IDLE != pid || list_empty(&_proc_list)); 
         KASSERT(PID_INIT != pid || PID_IDLE == curproc->p_pid); 
-    /* ---------------------heguang-------------------- */
         proc_t* process=(proc_t*)slab_obj_alloc(proc_allocator);
         memset(process,0,sizeof(proc_t));
 
@@ -141,8 +133,6 @@ proc_create(char *name)
             process->p_pproc=curproc;
             list_insert_tail(&curproc->p_children,&process->p_child_link);
         }
-    /* ---------------------heguang-------------------- */
-        dbg(DBG_CORE,"Leave _proc_getid()\n");
         return process;
 }
 
@@ -174,12 +164,9 @@ proc_create(char *name)
 void
 proc_cleanup(int status)
 {
-    /* ---------------------heguang-------------------- */
-    /*init process 情况怎么处理?*/
-    dbg(DBG_CORE,"Enter proc_cleanup()\n");
-    KASSERT(NULL != proc_initproc); /* should have an "init" process */
-    KASSERT(1 <= curproc->p_pid); /* this process should not be idle process */
-    KASSERT(NULL != curproc->p_pproc); /* this process should have parent process*/
+    KASSERT(NULL != proc_initproc); 
+    KASSERT(1 <= curproc->p_pid); 
+    KASSERT(NULL != curproc->p_pproc); 
 
     KASSERT(curproc->p_pid!=PID_IDLE);
 
@@ -191,8 +178,7 @@ proc_cleanup(int status)
         if(curproc->p_pproc->p_wait.tq_size!=0)
         {
             sched_wakeup_on(&curproc->p_pproc->p_wait);
-            /*remove child link?*/
-            /*list_remove(&curproc->p_child_link);*/
+            
         }
 
         /*assign children to new parent*/
@@ -209,14 +195,11 @@ proc_cleanup(int status)
 
         curproc->p_state=PROC_DEAD;
         curproc->p_status=status;
-        /*remove list link?*/
+        dbg(DBG_CORE,"Process %d has been cleanedup.\n",%curproc->p_pid);
         list_remove(&curproc->p_list_link);
-        /*contex switch*/
         sched_switch();
     }
 }
-    /* ---------------------heguang-------------------- */
-    dbg(DBG_CORE,"Leave proc_cleanup\n");
 }
 
 /*
@@ -231,32 +214,24 @@ proc_cleanup(int status)
 void
 proc_kill(proc_t *p, int status)
 {
-    /* ---------------------heguang-------------------- */
-        dbg(DBG_CORE,"Enter proc_kill\n");
         if(curproc==p)
         {
-            dbg(DBG_CORE,"Enter do_exit\n");
-            do_exit(status);/*cancel thread proc clean non destroy*/
+            do_exit(status);
         }
         else
         {
-            dbg(DBG_CORE,"Process %i is in kill\n", p -> p_pid);
-            /*clean up process cancel thread clean proc*/
             kthread_t * thread; 
             list_iterate_begin(&p->p_threads,thread,kthread_t,kt_plink)
             {
-                dbg(DBG_CORE,"Enter cancel thread\n");
                 if(thread->kt_state!=KT_EXITED)
                 {
                     kthread_cancel(thread,0);
                 }
             }list_iterate_end();
-            dbg(DBG_CORE,"All thread canceled\n");
 
             if(p->p_pproc->p_wait.tq_size!=0)
             {
                 sched_wakeup_on(&p->p_pproc->p_wait);
-                dbg(DBG_CORE,"Parent wakeup\n");
             }
             if(!list_empty(&p->p_children))
             {
@@ -272,9 +247,6 @@ proc_kill(proc_t *p, int status)
             p->p_state=PROC_DEAD;
             p->p_status=status;
             list_remove(&p->p_child_link);
-            /*list_remove(&p->p_list_link);*/
-<<<<<<< HEAD
-<<<<<<< HEAD
             
             list_iterate_begin(&p->p_threads,thread,kthread_t,kt_plink)
             {
@@ -282,18 +254,11 @@ proc_kill(proc_t *p, int status)
             }list_iterate_end();
             list_remove(&p->p_list_link);
             
-            dbg(DBG_CORE,"Begin pt_destory\n");
-
             pt_destroy_pagedir(p->p_pagedir);
+            dbg(DBG_CORE,"Process %i has been killled by current process.\n", p -> p_pid);
             slab_obj_free(proc_allocator, p);
-=======
 
->>>>>>> convert
-=======
->>>>>>> Revert "convert"
         }
-    /* ---------------------heguang-------------------- */
-        dbg(DBG_CORE,"Leave proc_kill\n");
 }
 
 /*
@@ -305,17 +270,12 @@ proc_kill(proc_t *p, int status)
 void
 proc_kill_all()
 {
-    /* ---------------------heguang-------------------- */
-    /*pagedir 回收?*/
-    dbg(DBG_CORE,"Enter proc_kill_all\n");
     proc_t *link;
     char buffer[1024];
     proc_list_info(NULL, buffer, 1024);
-    dbg_print("%s", buffer);
+     dbg_print("Process list before kill all :\n %s", buffer);
     list_iterate_begin(&_proc_list, link, proc_t, p_list_link) 
     {
-        proc_info(link, buffer, 1024);
-        dbg_print("%s", buffer);
         if(link->p_pproc != NULL)
         {
         if((link->p_pproc->p_pid!=PID_IDLE)&&(link->p_pid!=PID_IDLE))
@@ -324,45 +284,24 @@ proc_kill_all()
             if(thread->kt_state!=KT_SLEEP)
             {
             proc_kill(link,0);
-<<<<<<< HEAD
-=======
-            
-            list_iterate_begin(&link->p_threads,thread,kthread_t,kt_plink)
-            {
-                kthread_destroy(thread);
-            }list_iterate_end();
-            list_remove(&link->p_list_link);
-
-            
-            dbg(DBG_CORE,"Begin pt_destory\n");
-
-            pt_destroy_pagedir(link->p_pagedir);
-            slab_obj_free(proc_allocator, link);
->>>>>>> convert
             }
         }
         }
     }list_iterate_end();
     proc_list_info(NULL, buffer, 1024);
-    dbg_print("%s", buffer);
-    /* ---------------------heguang-------------------- */
-    dbg(DBG_CORE,"Leave proc_kill_all\n");
+    dbg_print("Process list before kill all :\n %s", buffer);
+    
 }
 
 proc_t *
 proc_lookup(int pid)
 {
-       dbg(DBG_CORE,"Enter proc_lookup\n");
         proc_t *p;
         list_iterate_begin(&_proc_list, p, proc_t, p_list_link) {
                 if (p->p_pid == pid) {
-
-                     dbg(DBG_CORE,"Leave proc_lookup\n");
                         return p;
                 }
         } list_iterate_end();
-
-        dbg(DBG_CORE,"Leave proc_lookup\n");
         return NULL;
 }
 
@@ -384,9 +323,7 @@ void
 proc_thread_exited(void *retval)
 {
     dbg(DBG_CORE,"Enter proc_thread_exited\n");
-    /* ---------------------heguang-------------------- */
     proc_cleanup(0);
-    /* ---------------------heguang-------------------- */
     dbg(DBG_CORE,"Enter proc_thread_exited\n");
 }
 
@@ -406,14 +343,10 @@ proc_thread_exited(void *retval)
  * Options other than 0 are not supported.
  */
 
- /*++sleep on ? check IDLE INIT++*/
 pid_t
 do_waitpid(pid_t pid, int options, int *status)
 {
-     dbg(DBG_CORE,"Enter do_waitpid\n");
-    /* ---------------------heguang-------------------- */
 
-    /*busy wait?*/
     KASSERT((pid==-1||pid>0)&&(options==0));
     if(list_empty(&curproc->p_children))
         return -ECHILD;
@@ -486,9 +419,6 @@ do_waitpid(pid_t pid, int options, int *status)
         }list_iterate_end();
         return -ECHILD;
     }
-    /* ---------------------heguang-------------------- */
-
-     dbg(DBG_CORE,"Leave do_waitpid\n");
 }
 
 /*
@@ -502,24 +432,10 @@ void
 do_exit(int status)
 {
     dbg(DBG_CORE,"Enter do_exit\n");
-    /* ---------------------heguang-------------------- */
     kthread_t *thread;
     curproc->p_status=status;
     kthread_exit(NULL);
-
-    /*kthread_exit proc_cleanup */
-    /*
-    list_iterate_begin(&curproc->p_threads,thread,kthread_t,kt_plink)
-    {
-        if(thread->kt_state!=KT_EXITED)
-        {
-            kthread_cancel(thread,0);
-        }
-    }list_iterate_end();
-    proc_cleanup(0);
-    */
-    /* ---------------------heguang-------------------- */
-        dbg(DBG_CORE,"Leave do_exit\n");
+    dbg(DBG_CORE,"Leave do_exit\n");
 }
 
 size_t

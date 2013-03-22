@@ -2,7 +2,7 @@ This test assignment is evenly splited in our group.
 Split:
 
 Yu Sun(sun812@usc.edu):			        100/3 		thread.c, sched.c     
-Heguang Liu(heguangl@usc.edu):		  100/3		  proc.c, kmain.c, mutex.c
+Heguang Liu(heguangl@usc.edu):		    100/3		  proc.c, kmain.c, mutex.c
 Tao Hu(taohu@usc.edu):			        100/3		  git, gradeline, test, shell,
 
 Tips to test out kernel:

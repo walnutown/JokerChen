@@ -74,46 +74,56 @@ free_stack(char *stack)
 kthread_t *
 kthread_create(struct proc *p, kthread_func_t func, long arg1, void *arg2)
 {
-        
-        KASSERT(NULL != p); 
+        KASSERT(NULL != p); /* the process should not be NULL */
+
+        dbg(DBG_CORE,"Enter kthread_create()\n");
+        /* Yu Sun Code Start */
+        /* Alloc the thread form slab chunk */
         kthread_t * current_thread = (kthread_t *)slab_obj_alloc(kthread_allocator);
         memset(current_thread,0,sizeof(kthread_t));
+
         KASSERT(current_thread != NULL);
-        
+        /* Set process which the thread belong to */
         current_thread -> kt_proc = p;
+        /* Initialize the thread's stack */
         char * thread_stack = alloc_stack();
         KASSERT(thread_stack != NULL);
         current_thread -> kt_kstack = thread_stack;
-        
+        /* Initialize the thread context */
         context_t thread_context;
         context_setup(&thread_context, func, arg1, arg2, thread_stack, DEFAULT_STACK_SIZE, p -> p_pagedir);
         current_thread -> kt_ctx = thread_context;
-        
+        /* Initialize thread's stuff */
         current_thread -> kt_retval = 0;
         current_thread -> kt_errno = 0;
         current_thread -> kt_cancelled = 0;
         current_thread -> kt_wchan = NULL;
-        
+        /* Initialize thread's state */
         current_thread -> kt_state = KT_NO_STATE;
+        /* Initialize thread's link */
         list_link_init(&current_thread -> kt_qlink);
         list_link_init(&current_thread -> kt_plink);
-                
+        /* Insert to process's thread list */
         list_insert_tail(&p -> p_threads, &current_thread -> kt_plink);
-        dbg_print("Thread created successful in process %d.\n", p -> p_pid);
+        dbg_print("Thread created successful in process %d", p -> p_pid);
         return current_thread;
+        panic("Return in kthread_create()!!!\n");
+        /* Yu Sun Code Finish */
+        dbg(DBG_CORE,"Leave kthread_create()\n");
+        return NULL;
 }
 
 void
 kthread_destroy(kthread_t *t)
 {
-        dbg(DBG_CORE,"Enter kthread_destroy().\n");
+        dbg(DBG_CORE,"Enter kthread_destroy()\n");
         KASSERT(t && t->kt_kstack);
         free_stack(t->kt_kstack);
         if (list_link_is_linked(&t->kt_plink))
                 list_remove(&t->kt_plink);
 
         slab_obj_free(kthread_allocator, t);
-        dbg(DBG_CORE,"Leave kthread_destroy().\n");
+        dbg(DBG_CORE,"Leave kthread_destroy()\n");
 }
 
 /*
@@ -132,16 +142,19 @@ kthread_destroy(kthread_t *t)
 void
 kthread_cancel(kthread_t *kthr, void *retval)
 {
-        dbg(DBG_CORE,"Enter kthread_cancel()\n.");
-        KASSERT(NULL != kthr); 
-        if(kthr == curthr) {
+        KASSERT(NULL != kthr); /* should have thread */
+
+        dbg(DBG_CORE,"Enter kthread_cancel()\n");
+        /* Yu Sun Code Start */
+        if(kthr == curthr) {/* KT_EXITED clean proc*/
                 kthread_exit(retval);
         }
-        else {
+        else {/**/
                 kthr -> kt_retval = retval;
                 sched_cancel(kthr);
         }
-        dbg(DBG_CORE,"Leave kthread_cancel()\n.");
+        /* Yu Sun Code Finish */
+        dbg(DBG_CORE,"Leave kthread_cancel()\n");
 }
 
 /*
@@ -157,15 +170,22 @@ kthread_cancel(kthread_t *kthr, void *retval)
 void
 kthread_exit(void *retval)
 {
-        dbg(DBG_CORE,"Enter kthread_exit().\n");
-        KASSERT(!curthr->kt_wchan); 
-        KASSERT(!curthr->kt_qlink.l_next && !curthr->kt_qlink.l_prev); 
+        KASSERT(!curthr->kt_wchan); /* queue should be empty */
+        KASSERT(!curthr->kt_qlink.l_next && !curthr->kt_qlink.l_prev); /*
+queue should be empty */
         KASSERT(curthr->kt_proc == curproc);
 
+        dbg(DBG_CORE,"Enter kthread_exit()\n");
+        /* Yu Sun Code Start */
+        /* Set thread return value */
+        
         curthr -> kt_retval = retval;
+        /* Set thread state to KT_EXITED */
         curthr -> kt_state = KT_EXITED;
+        /* Alerts the process that the currently executing thread has just exited */
         proc_thread_exited(retval);
-        dbg(DBG_CORE,"Leave kthread_exit().\n");
+        /* Yu Sun Code Finish */
+        dbg(DBG_CORE,"Leave kthread_exit()\n");
 }
 
 /*

@@ -23,8 +23,12 @@ void kmutex_lock_cancellable(kmutex_t *mtx); void kmutex_unlock(kmutex_t *mtx);
 void
 kmutex_init(kmutex_t *mtx)
 {
-    sched_queue_init(&mtx->km_waitq);
-    mtx->km_holder=NULL;
+    dbg(DBG_CORE,"Enter kmutex_init()\n");
+	/* ---------------------heguang-------------------- */
+	sched_queue_init(&mtx->km_waitq);
+	mtx->km_holder=NULL;
+	/* ---------------------heguang-------------------- */
+    dbg(DBG_CORE,"Leave kmutex_init()\n");
 }
 
 /*
@@ -37,13 +41,15 @@ void
 kmutex_lock(kmutex_t *mtx)
 {
     KASSERT(curthr && (curthr != mtx->km_holder));
-    dbg(DBG_CORE,"Enter kmutex_lock().\n");
-    if(mtx->km_holder!=NULL)
-    {
-        sched_sleep_on(&mtx->km_waitq);
-    }
-    mtx->km_holder=curthr;
-    dbg(DBG_CORE,"Leave kmutex_lock().\n");
+    dbg(DBG_CORE,"Enter kmutex_lock()\n");
+	/* ---------------------heguang-------------------- */
+	if(mtx->km_holder!=NULL)
+	{
+		sched_sleep_on(&mtx->km_waitq);
+	}
+	mtx->km_holder=curthr;
+	/* ---------------------heguang-------------------- */
+    dbg(DBG_CORE,"Leave kmutex_lock()\n");
 }
 
 /*
@@ -54,23 +60,26 @@ int
 kmutex_lock_cancellable(kmutex_t *mtx)
 {
     KASSERT(curthr && (curthr != mtx->km_holder));
-    dbg(DBG_CORE,"Enter kmutex_lock_cancellable().\n");
+    dbg(DBG_CORE,"Enter kmutex_lock_cancellable()\n");
+    /* ---------------------heguang-------------------- */
     if(mtx->km_holder!=NULL)
     {
-        int val=sched_cancellable_sleep_on(&mtx->km_waitq);
-        if(val!=-EINTR)/*thread is not cancelled*/
-        {
-            mtx->km_holder=curthr;
-        }
-        dbg(DBG_CORE,"Leave kmutex_lock_cancellable().\n");
-        return val;
+    	int val=sched_cancellable_sleep_on(&mtx->km_waitq);
+    	if(val!=-EINTR)/*thread is not cancelled*/
+    	{
+    		mtx->km_holder=curthr;
+    	}
+        dbg(DBG_CORE,"Leave kmutex_lock_cancellable()\n");
+    	return val;
     }
     else
     {
-        mtx->km_holder=curthr;
-        dbg(DBG_CORE,"Leave kmutex_lock_cancellable().\n");
-        return 0;
-    }  
+    	mtx->km_holder=curthr;
+        dbg(DBG_CORE,"Leave kmutex_lock_cancellable()\n");
+    	return 0;
+    }
+    /* ---------------------heguang-------------------- */
+       
 }
 
 /*
@@ -91,18 +100,34 @@ void
 kmutex_unlock(kmutex_t *mtx)
 {
     KASSERT(curthr && (curthr == mtx->km_holder));
+    
+    if(mtx->km_holder!=NULL)
+    {
+    dbg(DBG_CORE,"mutex holder before lock pid: %d\n",mtx->km_holder->kt_proc->p_pid);
+    }
+
     dbg(DBG_CORE,"Enter kmutex_unlock()\n");
+    /* ---------------------heguang-------------------- */
+    if(mtx->km_holder!=NULL)
+    {
+    dbg(DBG_CORE,"mutex holder before lock pid: %d\n",mtx->km_holder->kt_proc->p_pid);
+    }
+
+
     if(mtx->km_waitq.tq_size==0)
     {
-        mtx->km_holder=NULL;
+    	mtx->km_holder=NULL;
     }
     else
     {
-        mtx->km_holder=sched_wakeup_on(&mtx->km_waitq);
+    	mtx->km_holder=sched_wakeup_on(&mtx->km_waitq);
+    }
+    if(mtx->km_holder!=NULL)
+    {
+    dbg(DBG_CORE,"mutex holder after lock pid: %d\n",mtx->km_holder->kt_proc->p_pid);
     }
     KASSERT(curthr != mtx->km_holder);
-    dbg(DBG_CORE,"Leave kmutex_unlock().\n");
+    dbg(DBG_CORE,"Leave kmutex_unlock()\n");
+    /* ---------------------heguang-------------------- */
+
 }
-
-
-

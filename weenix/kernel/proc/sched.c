@@ -95,10 +95,8 @@ ktqueue_remove(ktqueue_t *q, kthread_t *thr)
 void
 sched_queue_init(ktqueue_t *q)
 {
-        dbg(DBG_CORE,"Enter sched_queue_init()\n");
         list_init(&q->tq_list);
         q->tq_size = 0;
-        dbg(DBG_CORE,"Return sched_queue_init()\n");
 }
 
 int
@@ -117,13 +115,11 @@ sched_queue_empty(ktqueue_t *q)
 void
 sched_sleep_on(ktqueue_t *q)
 {
-        dbg(DBG_CORE,"Enter sched_sleep_on()\n");
         /* ---------------------heguang-------------------- */
         curthr->kt_state=KT_SLEEP;
         ktqueue_enqueue(q,curthr);
         sched_switch();
         /* ---------------------heguang-------------------- */
-        dbg(DBG_CORE,"Leave sched_sleep_on()\n");
 
 }
 
@@ -262,9 +258,6 @@ sched_switch(void)
        
        while(new==NULL)
        {
-                intr_setipl(curr_ipl);
-                intr_wait();
-                intr_setipl(IPL_HIGH);
                 /*
                 if(new.kt_cancelled)
                 {
@@ -274,8 +267,11 @@ sched_switch(void)
                     kthread_exit((void*)curthr->kt_retval);
                 }
                 */
+                dbg(DBG_CORE,"Run queue is empty\n");
+                intr_setipl(IPL_LOW);
+                intr_wait();
+                intr_setipl(IPL_HIGH); 
                 new=ktqueue_dequeue(&kt_runq);
-        
         }
        curthr=new;
        curproc=curthr->kt_proc;

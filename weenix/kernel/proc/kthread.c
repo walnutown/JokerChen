@@ -74,11 +74,10 @@ free_stack(char *stack)
 kthread_t *
 kthread_create(struct proc *p, kthread_func_t func, long arg1, void *arg2)
 {
-        KASSERT(NULL != p); /* the process should not be NULL */
+        /* the process should not be NULL */
+        KASSERT(NULL != p); 
 
-        dbg(DBG_CORE,"Enter kthread_create()\n");
-        /* Yu Sun Code Start */
-        /* Alloc the thread form slab chunk */
+        
         kthread_t * current_thread = (kthread_t *)slab_obj_alloc(kthread_allocator);
         memset(current_thread,0,sizeof(kthread_t));
 
@@ -108,7 +107,6 @@ kthread_create(struct proc *p, kthread_func_t func, long arg1, void *arg2)
         dbg_print("Thread created successful in process %d", p -> p_pid);
         return current_thread;
         panic("Return in kthread_create()!!!\n");
-        /* Yu Sun Code Finish */
         dbg(DBG_CORE,"Leave kthread_create()\n");
         return NULL;
 }
@@ -149,7 +147,7 @@ kthread_cancel(kthread_t *kthr, void *retval)
         if(kthr == curthr) {/* KT_EXITED clean proc*/
                 kthread_exit(retval);
         }
-        else {/**/
+        else {
                 kthr -> kt_retval = retval;
                 sched_cancel(kthr);
         }
@@ -170,15 +168,15 @@ kthread_cancel(kthread_t *kthr, void *retval)
 void
 kthread_exit(void *retval)
 {
-        KASSERT(!curthr->kt_wchan); /* queue should be empty */
-        KASSERT(!curthr->kt_qlink.l_next && !curthr->kt_qlink.l_prev); /*
-queue should be empty */
+        /* queue should be empty */
+        KASSERT(!curthr->kt_wchan); 
+        /*queue should be empty */
+        KASSERT(!curthr->kt_qlink.l_next && !curthr->kt_qlink.l_prev); 
         KASSERT(curthr->kt_proc == curproc);
 
         dbg(DBG_CORE,"Enter kthread_exit()\n");
         /* Yu Sun Code Start */
-        /* Set thread return value */
-        
+        /* Set thread return value */  
         curthr -> kt_retval = retval;
         /* Set thread state to KT_EXITED */
         curthr -> kt_state = KT_EXITED;

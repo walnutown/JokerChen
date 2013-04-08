@@ -69,8 +69,15 @@ static context_t bootstrap_context;
 #define NORMAL_TEST                 0
 #define DEADLOCK_TEST               1
 #define PRODUCER_CONSMUER_TEST      2
+#define DEADLOCK_NORMAL_TEST        3
+#define KSHELL_TEST                 4
+#define READER_WRITER_TEST          5
+#define KILL_ALL_TEST               6
+#define DEADLOCK_CANCELLABLE_TEST   7
+#define PROC_KILL_TEST              8
+#define PROC_EXIT_TEST              9
 
-static int CURRENT_TEST = DEADLOCK_TEST;
+static int CURRENT_TEST = PROC_EXIT_TEST;
 
 /**
  * This is the first real C function ever called. It performs a lot off
@@ -290,13 +297,33 @@ initproc_create(void)
 static void       normal_test();
 static void       deadlock_test();
 static void       producer_consmuser_test();
+static void       deadlock_run();
+static void       kshell_test();
+static void      *kshell_run(int arg1, void *arg2);
 kmutex_t          mtx, pc_mutex;
+kmutex_t          dead_mtx1,dead_mtx2;
+static void      *deadlock1_run(int arg1, void *arg2);
+static void      *deadlock2_run(int arg1, void *arg2);
 static void      *deadlock(int arg1, void *arg2);
 int               share_resource;
 static void      *producer(int arg1, void *arg2);
 static void      *consumer(int arg1, void *arg2);
 ktqueue_t         kt_wproq, kt_wconq;
-
+static void       reader_writer_test();
+static void      *reader(int arg1, void *arg2);
+static void      *writer(int arg1, void *arg2);
+kmutex_t          wr_mutex;
+ktqueue_t         kt_readq, kt_writeq;
+int               reading, writing;
+static void       deadlock_cancellable_run();
+static void      *deadlock3_run(int arg1, void *arg2);
+static void      *deadlock4_run(int arg1, void *arg2);
+kmutex_t          dead_mtx3,dead_mtx4;
+static void       proc_kill_run();
+static void       killall_normal_run();
+static void       proc_exit_run();
+static void      *exit_test(int arg1, void *arg2);
+static void      *normal_test_run(int arg1, void *arg2);
 
 static void *
 initproc_run(int arg1, void *arg2)
@@ -314,6 +341,27 @@ initproc_run(int arg1, void *arg2)
         case PRODUCER_CONSMUER_TEST:
             producer_consmuser_test();
             break;
+        case DEADLOCK_NORMAL_TEST:
+            deadlock_run();
+            break;
+        case KSHELL_TEST:
+            kshell_test();
+            break;
+        case READER_WRITER_TEST:
+            reader_writer_test();
+            break;
+        case DEADLOCK_CANCELLABLE_TEST:
+            deadlock_cancellable_run();
+            break;
+        case PROC_KILL_TEST:
+            proc_kill_run();
+            break;
+        case KILL_ALL_TEST:
+            killall_normal_run();
+            break;
+        case PROC_EXIT_TEST:
+            proc_exit_run();
+            break;
      }
 
     int status;
@@ -329,9 +377,337 @@ initproc_run(int arg1, void *arg2)
     return NULL;
 }
 
+static void 
+proc_exit_run()
+{
+    dbg(DBG_CORE,"Test PROC_EXIT_TEST\n");
+    pid_t child=0;
+    int status=0;
+    proc_t * process=proc_create("test_process");
+    kthread_t* thread=kthread_create(process,exit_test,0,NULL);
+    sched_make_runnable(thread);
+
+    child=do_waitpid(-1,0,&status);
+    KASSERT(status==0);
+    dbg_print("process %d return.\n",(int)child);
+}
+
+static void *
+exit_test(int arg1, void *arg2)
+{
+    dbg(DBG_CORE,"Proc%d do exiting...\n", curproc -> p_pid);
+    do_exit(0);
+    dbg(DBG_CORE,"Proc%d do exit successfully\n", curproc -> p_pid);
+    return NULL;
+}
+
+static void
+killall_normal_run()
+{
+    dbg(DBG_CORE,"Test KILL_ALL_WITHOUT_DEADLOCK\n");
+    int status[5];
+    pid_t child[5];
+    proc_t *process[5];
+    kthread_t *thread[5];
+
+    int i;
+    for(i=0;i<5;i++)
+    {
+        process[i]=proc_create("test_process");
+        thread[i]=kthread_create(process[i],test,0,NULL);
+        sched_make_runnable(thread[i]);
+    }
+
+    proc_kill_all();
+    i=0;
+    while(!list_empty(&curproc->p_children))
+    {
+        child[i]=do_waitpid(-1,0,&status[i]);
+        KASSERT(status[i]==0);
+        dbg_print("process %d return.\n",(int)child[i]);
+        i++;
+    }
+}
+
+static void *
+normal_test_run(int arg1, void *arg2)
+{
+    dbg_print("normal test function return.\n");
+    return NULL;
+}
+
+static void *
+test(int arg1, void *arg2)
+{
+    dbg_print("test busy wait function start.\n");
+    while(1) {;}
+    dbg_print("test busy wait function return.\n");
+    return NULL;
+}
+
+static void
+proc_kill_run()
+{
+    dbg(DBG_CORE,"Test PROC_KILL_TEST\n");
+    dbg_print("The proces list at beginning\n");
+    char buffer[1024];
+    proc_list_info(NULL, buffer, 1024);
+    dbg_print("%s", buffer);
+    proc_t * process1=proc_create("test_process");
+    kthread_t* thread1=kthread_create(process1,test,0,NULL);
+
+    proc_t * process2=proc_create("test_process");
+    kthread_t* thread2=kthread_create(process2,test,0,NULL);
+    sched_make_runnable(thread1);
+    sched_make_runnable(thread2);
+    dbg_print("The proces list after create test process\n");
+    proc_list_info(NULL, buffer, 1024);
+    dbg_print("%s", buffer);
+
+    proc_kill(process1,0);
+    proc_kill(process2,0);
+    dbg_print("The proces list after kill test process\n");
+    proc_list_info(NULL, buffer, 1024);
+    dbg_print("%s", buffer);
+    /*proc_kill(curproc,0);*/
+}
+
+
+static void
+deadlock_cancellable_run()
+{
+    dbg(DBG_CORE,"Test DEADLOCK_CANCELLABLE_TEST\n");
+    proc_t *dead3proc,*dead4proc;
+    kthread_t *dead3thr,*dead4thr;
+
+    kmutex_init(&dead_mtx3);
+    kmutex_init(&dead_mtx4);
+
+    dead3proc=proc_create("dead3proc");
+    dead3thr=kthread_create(dead3proc,deadlock3_run,0,NULL);
+    dead4proc=proc_create("dead4proc");
+    dead4thr=kthread_create(dead4proc,deadlock4_run,0,NULL);
+
+    sched_make_runnable(dead3thr);
+    sched_make_runnable(dead4thr);
+}
+
+static void *
+deadlock3_run(int arg1, void *arg2)
+{
+    dbg_print("Proc%d trying to hold the mutex3\n", curproc -> p_pid);
+    kmutex_lock_cancellable(&dead_mtx3);
+    dbg_print("Proc%d holding the mutex3\n", curproc -> p_pid);
+    sched_make_runnable(curthr);
+    sched_switch();
+    dbg_print("Proc%d trying to hold the mutex4\n", curproc -> p_pid);
+    kmutex_lock_cancellable(&dead_mtx4);
+    dbg_print("Proc%d holding the mutex4\n", curproc -> p_pid);
+    kmutex_unlock(&dead_mtx4);
+    kmutex_unlock(&dead_mtx3);
+    return NULL;
+}
+
+static void *
+deadlock4_run(int arg1, void *arg2)
+{
+    dbg_print("Proc%d trying to hold the mutex4\n", curproc -> p_pid);
+    kmutex_lock_cancellable(&dead_mtx4);
+    dbg_print("Proc%d holding the mutex4\n", curproc -> p_pid);
+    sched_make_runnable(curthr);
+    sched_switch();
+    dbg_print("Proc%d trying to hold the mutex3\n", curproc -> p_pid);
+    kmutex_lock_cancellable(&dead_mtx3);
+    dbg_print("Proc%d holding the mutex3\n", curproc -> p_pid);
+    kmutex_unlock(&dead_mtx3);
+    kmutex_unlock(&dead_mtx4);
+    return NULL;
+}
+
+static void
+reader_writer_test() {
+    dbg(DBG_CORE,"Test READER_WRITER_TEST\n");
+    proc_t * preader, * pwriter;
+    kthread_t * kreader, * kwriter;
+    kmutex_init(&wr_mutex);
+    sched_queue_init(&kt_readq);
+    sched_queue_init(&kt_writeq);
+    reading = 0;
+    writing = 0;
+    int i;
+    /*create 3 writer*/
+    for(i = 0; i < 3; i++) {
+        char nwriter[8] = "writer";
+        nwriter[6] = i + 1 + '0';
+        nwriter[7] = '\0';
+        pwriter = proc_create(nwriter);
+        kwriter = kthread_create(pwriter,writer,0,NULL);
+        sched_make_runnable(kwriter);
+    }
+    /*create 5 reader*/
+    for(i = 0; i < 5; i++){
+        char nreader[8] = "reader";
+        nreader[6] = i + 1 + '0';
+        nreader[7] = '\0';
+        preader = proc_create(nreader);
+        kreader = kthread_create(preader,reader,0,NULL);
+        sched_make_runnable(kreader);
+    }
+}
+
+static void *
+reader(int arg1, void *arg2) {
+    /*read the resource 3 times*/
+    int i = 0;
+    while(i < 3) {
+        kmutex_lock(&wr_mutex);
+        if(writing == 0) {
+            reading++;
+            dbg_print("%s read the resourcs\n", curproc -> p_comm);
+            kmutex_unlock(&wr_mutex);
+            reading--;
+            if(reading == 0) {
+                dbg_print("no reader now, wakeup the writer\n");
+                sched_wakeup_on(&kt_writeq);
+            }
+            i++;
+            sched_make_runnable(curthr);
+            sched_switch();
+        }
+        else {
+            dbg_print("%s waiting for the writer, block\n", curproc -> p_comm);
+            kmutex_unlock(&wr_mutex);
+            sched_sleep_on(&kt_readq);
+        }
+    }
+    return NULL;
+}
+
+static void *
+writer(int arg1, void *arg2) {
+    /* write the resource 5 times */
+    int i = 0;
+    while(i < 5) {
+        kmutex_lock(&wr_mutex);
+        /*share_resource == 0 indicate no writer writing and no reader reading*/
+        if(reading == 0 && writing == 0) {
+            writing++;
+            dbg_print("%s write the resourcs\n", curproc -> p_comm);
+            kmutex_unlock(&wr_mutex);
+            writing--;
+            if(reading == 0 && writing == 0) {
+                dbg_print("no reader and writer now, wakeup the writer or reader\n");
+                sched_wakeup_on(&kt_writeq);
+                sched_broadcast_on(&kt_readq);
+            }
+            i++;
+            sched_make_runnable(curthr);
+            sched_switch();
+        }
+        else {
+            dbg_print("%s waiting for the writer or reader, block\n", curproc -> p_comm);
+            kmutex_unlock(&wr_mutex);
+            sched_sleep_on(&kt_writeq);
+        }
+    }
+    return NULL;
+}
+
+static void
+kshell_test() {
+    dbg(DBG_CORE,"Test KSHELL_TEST\n");
+    proc_t* pkshell = proc_create("kshell_test");
+    kthread_t *tkshell = kthread_create(pkshell,kshell_run, 0, NULL);
+    sched_make_runnable(tkshell);
+}
+
+static void *
+kshell_run(int arg1, void *arg2) {
+    /*dbg_print("Enter kshell_run\n");
+    kshell_t *ksh=kshell_create(0);
+    KASSERT(ksh && "kshell create failed.");
+    int val=0;
+    int err = 0;
+    while((err=kshell_execute_next(ksh)) > 0);
+
+    KASSERT(err == 0 && "kernel shell falsely exited.\n");
+    kshell_destroy(ksh);
+    dbg_print("Leave kshell_run\n");
+    return NULL;*/
+
+    kshell_t *new_shell;
+    int i;
+    while (1)
+    {
+        new_shell = kshell_create(0);
+        i = kshell_execute_next(new_shell);
+        if(i>0){dbg(DBG_TERM,"Error Executing the command\n");}
+        kshell_destroy(new_shell);
+        if(i==0){break;}
+    }
+    return NULL;
+}
+
+static void *
+deadlock1_run(int arg1, void *arg2)
+{
+    dbg_print("Proc%d trying to hold the mutex1\n", curproc -> p_pid);
+    kmutex_lock(&dead_mtx1);
+    dbg_print("Proc%d hold the mutex1\n", curproc -> p_pid);
+    sched_make_runnable(curthr);
+    sched_switch();
+    dbg_print("Proc%d trying to hold the mutex2\n", curproc -> p_pid);
+    kmutex_lock(&dead_mtx2);
+    dbg_print("Proc%d hold the mutex2\n", curproc -> p_pid);
+    kmutex_unlock(&dead_mtx2);
+    dbg_print("Proc%d relese the mutex2\n", curproc -> p_pid);
+    kmutex_unlock(&dead_mtx1);
+    dbg_print("Proc%d relese the mutex1\n", curproc -> p_pid);
+    return NULL;
+}
+
+static void *
+deadlock2_run(int arg1, void *arg2)
+{
+    dbg_print("Proc%d trying to hold the mutex2\n", curproc -> p_pid);
+    kmutex_lock(&dead_mtx2);
+    dbg_print("Proc%d hold the mutex2\n", curproc -> p_pid);
+    sched_make_runnable(curthr);
+    sched_switch();
+    dbg_print("Proc%d trying to hold the mutex1\n", curproc -> p_pid);
+    kmutex_lock(&dead_mtx1);
+    dbg_print("Proc%d hold the mutex1\n", curproc -> p_pid);
+    kmutex_unlock(&dead_mtx1);
+    dbg_print("Proc%d relese the mutex1\n", curproc -> p_pid);
+    kmutex_unlock(&dead_mtx2);
+    dbg_print("Proc%d relese the mutex2\n", curproc -> p_pid);
+    return NULL;
+}
+
+static void
+deadlock_run()
+{
+    dbg(DBG_CORE,"Test DEADLOCK_NORMAL_TEST\n");
+    proc_t *dead1proc,*dead2proc;
+    kthread_t *dead1thr,*dead2thr;
+
+    kmutex_init(&dead_mtx1);
+    kmutex_init(&dead_mtx2);
+
+    dead1proc=proc_create("dead1proc");
+    dead1thr=kthread_create(dead1proc,deadlock1_run,0,NULL);
+    dead2proc=proc_create("dead2proc");
+    dead2thr=kthread_create(dead2proc,deadlock2_run,0,NULL);
+
+    sched_make_runnable(dead1thr);
+    sched_make_runnable(dead2thr);
+
+}
+
 static void
 producer_consmuser_test() {
     /* ----------------producer/consumer---------------------- */
+    dbg(DBG_CORE,"Test PRODUCER_CONSMUER_TEST\n");
     proc_t * pproducer, * pconsumer;
     kthread_t * kproducer, * kconsumer;
     kmutex_init(&pc_mutex);
@@ -349,6 +725,7 @@ producer_consmuser_test() {
 static void
 deadlock_test() {
     /* ----------------deadlock---------------------- */
+    dbg(DBG_CORE,"Test DEADLOCK_TEST\n");
     proc_t * proc1, * proc2;
     kthread_t * kthr1, * kthr2;
     kmutex_init(&mtx);
@@ -368,7 +745,7 @@ normal_test() {
     for(i=0;i<10;i++)
     {
         proc_t *process = proc_create("test_process");
-        kthread_t *thread = kthread_create(process,test,0,NULL);
+        kthread_t *thread = kthread_create(process,normal_test_run,0,NULL);
         sched_make_runnable(thread);
     }
 }
@@ -380,7 +757,6 @@ producer(int arg1, void *arg2) {
         dbg_print("in producer proc\n");
         kmutex_lock(&pc_mutex);
 
-        dbg_print("producer proc get mutex\n");
         if(share_resource == 0) {
             share_resource = 1;
             i++;
@@ -404,7 +780,7 @@ consumer(int arg1, void *arg2) {
     while(i < 10) {
         dbg_print("in consumer proc\n");
         kmutex_lock(&pc_mutex);
-        dbg_print("consumer proc get mutex\n");
+
         if(share_resource == 1) {
             share_resource = 0;
             i++;
@@ -424,24 +800,12 @@ consumer(int arg1, void *arg2) {
 
 static void *
 deadlock(int arg1, void *arg2) {
-    dbg_print("deadlock function start.\n");
+    dbg_print("Proc%d trying to hold the mutex.\n", curproc -> p_pid);
     kmutex_lock(&mtx);
-    dbg_print("deadlock function return.\n");
+    dbg_print("Proc%d holding the mutex.\n", curproc -> p_pid);
     return NULL;
 }
 
-static void *
-test(int arg1, void *arg2)
-{
-    /* ---------------------heguang-------------------- */
-    dbg_print("test function start.\n");
-    /*add test code here.*/
-    /*while(1) {
-
-    }*/
-    dbg_print("test function return.\n");
-    return NULL;
-}
  /* Yu Sun Code Finish */
 
 /**
